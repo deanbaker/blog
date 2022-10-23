@@ -59,7 +59,7 @@ plugins:
 author:
   name   : "Dean Baker"
   # avatar : "/assets/images/bio-photo.jpg"
-  bio    : "Engineering Leadership - Learning"
+  bio    : "Technology - Leadership - L&D"
   links:
     - label: "LinkedIn"
       icon: "fab fa-fw fa-linkedin"
