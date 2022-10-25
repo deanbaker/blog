@@ -69,6 +69,14 @@ author:
       icon: "fab fa-fw fa-github"
       url: "https://github.com/deanbaker"
 
+repository: deanbaker/blog
+comments:
+  provider: "utterances"
+  utterances:
+    theme: "github-light" # "github-dark"
+    issue_term: "pathname"
+    label: "comment" # Optional - must be existing label.
+
 footer:
   links:
     - label: "LinkedIn"
@@ -109,3 +117,5 @@ analytics:
   google:
     tracking_id: "G-G3XGS4EEV3"
     anonymize_ip: false # default
+
+  
