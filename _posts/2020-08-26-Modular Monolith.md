@@ -11,5 +11,4 @@ header:
   teaser: "/assets/images/modular-monolith-teaser.jpg"
 ---
 ![Hero Image](/assets/images/modular-monolith-teaser.jpg)
-
 > Go full circle with better engineering standards

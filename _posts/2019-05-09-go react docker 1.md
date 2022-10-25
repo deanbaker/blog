@@ -10,5 +10,4 @@ header:
   teaser: "/assets/images/go-react-1-teaser.jpg"
 ---
 ![Hero Image](/assets/images/go-react-1-teaser.jpg)
-
 > Deploy all the things for free, easily.
