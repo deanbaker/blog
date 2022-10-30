@@ -11,3 +11,5 @@ header:
 ---
 ![Hero Image](/assets/images/go-react-1-teaser.jpg)
 > Deploy all the things for free, easily.
+
+Click on the title or the **Direct Link** below to start reading on Medium  

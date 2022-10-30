@@ -12,3 +12,5 @@ header:
 ---
 ![Hero Image](/assets/images/modular-monolith-teaser.jpg)
 > Go full circle with better engineering standards
+
+Click on the title or the **Direct Link** below to start reading on Medium

@@ -12,3 +12,5 @@ header:
 
 ![Hero Image](/assets/images/codebase-community.jpg)
 > Exploring the broken windows theory
+
+Click on the title or the **Direct Link** below to start reading on Medium
