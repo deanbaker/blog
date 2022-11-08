@@ -6,7 +6,7 @@ tags:
   - Geelong
 header:
   teaser: "/assets/images/geelong-teaser.jpeg"
-hidden: true
+hidden: false
 ---
 
 ![Hero Image](/assets/images/geelong-teaser.jpeg)
@@ -16,7 +16,9 @@ hidden: true
 
 Following on from the LinkedIn post here:
 
-Now that things are becoming normal again, I want to see if we can create a space for professionals in the software engineering field (and relatives) to meet and collaborate IRL in Geelong.
+Now that things are becoming normal again, I want to see if we can create a space for professionals in the software engineering field (and relatives) to meet and collaborate IRL in Geelong. It is getting close to Christmas, so I suspect this is a good time to start organising, but a bad time to meet. 
+
+The plan would be to kick off in the new year and spend this time gauging interest and getting set up. 
 
 I moved to Geelong from Melbourne mid-pandemic, and for now, I don't see myself getting back into the city very often. I know a bunch of folks like me in the industry, living in Geelong, so this is an attempt to create a local meetup.
 
@@ -45,7 +47,7 @@ We're not quite big enough to host separate JS, JVM and billion Front end meetup
 # A bit about me
 Two years ago, mid-pandemic, my family and I decided to move from Melbourne to a slower-paced Geelong. We had talked about the move before COVID hit and had even had the green light from my boss for two days WFH. 
 
-Your WFH mileage may vary depending on a million factors - I have enjoyed it because I get to spend so much time with two little girls at home. However, I miss the face-to-face connection with other professionals in my field, which has been compounding for the last two years. I feel the need to be more social with others in my field. 
+Your WFH mileage may vary depending on a million factors - I have enjoyed it because I get to spend so much time with two little girls at home. However, I miss the face-to-face connection with other professionals in my field, which has been compounding for the last two years. I feel the need to be more social with others in my field and think this is a great way to get a local community started.
 
 #### Current work
 I'm currently working with a fantastic company that is 100% remote. We do have access to co-working spaces in Melbourne and Sydney, but unfortunately, nobody from Engineering lives down this way (Sydney is the closest person in Engineering for me). I am sure that this is my main driver in creating this space - an outlet that doesn't require me to commute to Melbs :)
