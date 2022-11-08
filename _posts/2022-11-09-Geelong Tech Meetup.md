@@ -10,7 +10,7 @@ hidden: false
 ---
 
 ![Hero Image](/assets/images/geelong-teaser.jpeg)
-> Create a place for engineers to connect and share
+> A place for engineers to connect and share learnings
 
 **TL;DR:** [Join us on slack to get started.](https://join.slack.com/t/geelongtechconnect/shared_invite/zt-1isoe14w3-~wTK22uMRM5ah8j48jufeQ)
 
