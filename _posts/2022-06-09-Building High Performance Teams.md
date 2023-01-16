@@ -4,7 +4,7 @@ categories:
   - Presentation
 tags:
   - DevEx
-  - Management
+  - Leadership
   - Spotify
 link: https://open.spotify.com/episode/7Cq3gNUNinhnuLOa1wVPdz
 header:
