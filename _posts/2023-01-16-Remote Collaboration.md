@@ -75,7 +75,6 @@ I have written about this before. If you are going to take the time away from pe
 ![Summarise Meeting](/assets/images/remote%20communication/summarise_meeting.jpg)
 I struggle to do this effectively, and I need to get better. If we do have a meeting, we need to be able to externalise the content. What was discussed, what actions were there, who is driving what? Often you end up with a wiki anyway - can we just collaborate on there and have a 15min wrapup?
 
-Florian writes 
 > Once you do meetings right, you no longer need most of them.
 
 ---
