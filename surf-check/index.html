@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beginner Surf Check — Point Roadknight</title>
+<style>
+  :root{
+    --bg:#0b1f33; --card:#12304e; --card2:#16395c; --ink:#eaf4ff; --dim:#9db8d4;
+    --go:#0a8f4f; --ok:#d97706; --skip:#dc2626; --accent:#38bdf8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,#0b1f33 0%,#0e2a47 100%); color:var(--ink); min-height:100vh; padding:20px 16px 60px;}
+  .wrap{max-width:760px; margin:0 auto;}
+  header h1{font-size:1.35rem; letter-spacing:.3px;}
+  header p{color:var(--dim); font-size:.85rem; margin-top:4px;}
+  #updated{color:var(--dim); font-size:.75rem; margin-top:10px;}
+
+  /* Today hero */
+  .hero{background:var(--card); border:1px solid #1d4b7a; border-radius:16px; padding:20px; margin-top:16px;}
+  .hero .top{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .chip{font-weight:700; font-size:1.5rem; padding:8px 18px; border-radius:999px; color:#fff;}
+  .chip.go{background:var(--go);} .chip.ok{background:var(--ok);} .chip.skip{background:var(--skip);}
+  .hero .title{font-size:1.05rem; font-weight:600;}
+  .hero .sub{color:var(--dim); font-size:.85rem; margin-top:2px;}
+  .facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:16px;}
+  .fact{background:var(--card2); border-radius:10px; padding:10px 12px;}
+  .fact .k{font-size:.7rem; text-transform:uppercase; letter-spacing:.8px; color:var(--dim);}
+  .fact .v{font-size:1.05rem; font-weight:600; margin-top:3px;}
+  #reasons{margin-top:14px; font-size:.9rem; line-height:1.55; color:#cfe3f7;}
+  #reasons li{margin-left:18px;}
+
+  h2{font-size:.95rem; text-transform:uppercase; letter-spacing:1px; color:var(--dim); margin:26px 0 10px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px;}
+  .day{background:var(--card); border:1px solid #1d4b7a; border-radius:14px; padding:14px;}
+  .day.best{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}
+  .day .dname{font-weight:700; font-size:.95rem;}
+  .day .ddate{color:var(--dim); font-size:.75rem;}
+  .day .dchip{display:inline-block; font-weight:700; font-size:.8rem; padding:3px 12px; border-radius:999px; color:#fff; margin-top:8px;}
+  .day .dmeta{margin-top:10px; font-size:.82rem; color:#cfe3f7; line-height:1.6;}
+  .day .dmeta b{color:#fff;}
+  .bestflag{color:var(--accent); font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-left:6px;}
+
+  footer{color:var(--dim); font-size:.75rem; line-height:1.6; margin-top:30px;}
+  a{color:var(--accent);}
+  .err{background:#3a1d1d; border:1px solid #7a2e2e; color:#ffc9c9; padding:16px; border-radius:12px; margin-top:16px; line-height:1.6;}
+  .loading{color:var(--dim); margin-top:20px; font-size:.9rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏄 Beginner Surf Check</h1>
+    <p>Point Roadknight, Anglesea VIC &nbsp;•&nbsp; plain-English surf conditions for learning surfers</p>
+    <div id="updated"></div>
+  </header>
+
+  <div id="content">
+    <div class="loading">Loading forecast from Open-Meteo…</div>
+  </div>
+
+  <footer>
+    <p>Data: Open-Meteo Marine + Weather APIs (free, no key, called directly from your browser). Wave height is the open-water model estimate; breaking waves at the beach will differ. This is a planning aid, not a safety service: always check the surf live, heed signs and lifeguards, and know your limits.</p>
+  </footer>
+</div>
+
+<script>
+const LAT = -38.402, LON = 144.174;           // Point Roadknight
+const BEACH = { name:'Point Roadknight', offshore:305, onshore:135, cone:50 };
+
+function angDiff(a,b){ let d=Math.abs(a-b)%360; return d>180?360-d:d; }
+function windState(dir){
+  if(dir==null) return {kind:'unknown', score:5};
+  if(angDiff(dir, BEACH.offshore) <= BEACH.cone) return {kind:'offshore', score:10};
+  if(angDiff(dir, BEACH.onshore) <= BEACH.cone) return {kind:'onshore', score:2};
+  return {kind:'cross', score:6};
+}
+function waveScore(h){
+  if(h==null) return 3;
+  if(h<0.2) return 1;      // flat
+  if(h<0.3) return 3;      // tiny
+  if(h<0.5) return 7;      // small
+  if(h<=1.2) return 10;    // ideal
+  if(h<=1.5) return 8;
+  if(h<=2.0) return 5;
+  if(h<=2.5) return 2;
+  return 0;                // too big
+}
+function windSpeedScore(s){
+  if(s==null) return 5;
+  if(s<10) return 10;
+  if(s<20) return 8;
+  if(s<30) return 5;
+  if(s<40) return 2;
+  return 0;
+}
+function gustPenalty(g){
+  if(g==null) return 0;
+  if(g>50) return -2;
+  if(g>35) return -1;
+  return 0;
+}
+function waveNote(h){
+  if(h==null) return 'wave data unavailable';
+  if(h<0.3) return 'flat, barely breaking ('+h.toFixed(1)+' m)';
+  if(h<0.6) return 'small ('+h.toFixed(1)+' m), good for first sessions';
+  if(h<=1.3) return 'nice learner size ('+h.toFixed(1)+' m)';
+  if(h<=1.8) return 'getting punchy ('+h.toFixed(1)+' m), pushing it for a beginner';
+  return 'big ('+h.toFixed(1)+' m), too much for a beginner';
+}
+function windNote(s, ws){
+  if(s==null) return 'wind data unavailable';
+  const dir = ws.kind==='offshore' ? 'offshore' : ws.kind==='onshore' ? 'onshore' : 'cross-shore';
+  if(ws.kind==='onshore' && s>=25) return dir+' wind at '+Math.round(s)+' km/h, messy, avoid';
+  if(ws.kind==='onshore') return dir+' wind '+Math.round(s)+' km/h, choppy';
+  if(s>=30) return dir+' wind '+Math.round(s)+' km/h, getting wild';
+  if(s>=20) return dir+' wind '+Math.round(s)+' km/h, OK but breezy';
+  return 'light '+dir+' wind '+Math.round(s)+' km/h, clean';
+}
+function scoreHour(hour){
+  let s = 0.45*waveScore(hour.wave)
+        + 0.25*windSpeedScore(hour.wind)
+        + 0.25*windState(hour.windDir).score
+        + gustPenalty(hour.gust);
+  // wave size dominates for a beginner: big waves can never be GO
+  if(hour.wave!=null && hour.wave>2.0) s = Math.min(s, 4.4);   // max OK-ish, usually SKIP
+  if(hour.wave!=null && hour.wave>1.3) s = Math.min(s, 6.9);   // max OK
+  return Math.max(0, Math.min(10, s));
+}
+function verdict(score){
+  if(score>=7) return {label:'GO', cls:'go'};
+  if(score>=4.5) return {label:'OK', cls:'ok'};
+  return {label:'SKIP', cls:'skip'};
+}
+function fmtTime(t){ const d=new Date(t); return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
+function fmtHour(iso){ const d=new Date(iso); return d.toLocaleTimeString([], {hour:'numeric'}); }
+function dayKey(iso){ return iso.slice(0,10); }
+
+async function fetchJson(url, tries){
+  tries = tries || 2;
+  for(let i=0;i<tries;i++){
+    try{
+      const ctl = new AbortController();
+      const to = setTimeout(()=>ctl.abort(), 15000);
+      const r = await fetch(url, {signal: ctl.signal});
+      clearTimeout(to);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return await r.json();
+    }catch(e){
+      if(i===tries-1) throw e;
+      await new Promise(res=>setTimeout(res, 2000));
+    }
+  }
+}
+
+async function load(){
+  try{
+    const marineUrl = 'https://marine-api.open-meteo.com/v1/marine?latitude='+LAT+'&longitude='+LON+
+      '&timezone=Australia%2FMelbourne&forecast_days=8'+
+      '&hourly=wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_period,sea_surface_temperature,sea_level_height_msl';
+    const wxUrl = 'https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LON+
+      '&timezone=Australia%2FMelbourne&forecast_days=8'+
+      '&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=sunrise,sunset';
+
+    const [marine, wx] = await Promise.all([
+      fetchJson(marineUrl),
+      fetchJson(wxUrl)
+    ]);
+
+    const H = marine.hourly;
+    const hours = H.time.map((t,i)=>({
+      time: t, date: dayKey(t),
+      wave: H.wave_height[i], waveDir: H.wave_direction[i], period: H.wave_period[i],
+      swell: H.swell_wave_height[i], swellPer: H.swell_wave_period[i],
+      sst: H.sea_surface_temperature[i], seaLevel: H.sea_level_height_msl[i],
+      wind: wx.hourly.wind_speed_10m[i], windDir: wx.hourly.wind_direction_10m[i],
+      gust: wx.hourly.wind_gusts_10m[i]
+    })).filter(h=>h.wave!=null);
+
+    const days = {};
+    for(const h of hours){
+      if(!days[h.date]) days[h.date] = {date:h.date, hours:[]};
+      days[h.date].hours.push(h);
+    }
+
+    // tide extrema from sea level
+    const seaTimes = H.time, seaVals = H.sea_level_height_msl;
+    const extrema = []; // {time, type, level}
+    for(let i=1;i<seaTimes.length-1;i++){
+      const v=seaVals[i];
+      if(v==null) continue;
+      if(v>=seaVals[i-1] && v>=seaVals[i+1]) extrema.push({time:seaTimes[i], type:'High', level:v});
+      if(v<=seaVals[i-1] && v<=seaVals[i+1]) extrema.push({time:seaTimes[i], type:'Low', level:v});
+    }
+    const tidesByDay = {};
+    for(const e of extrema){
+      const k = dayKey(e.time);
+      if(!tidesByDay[k]) tidesByDay[k] = [];
+      tidesByDay[k].push(e);
+    }
+
+    // per-day best window (daylight hours only)
+    const dayList = Object.keys(days).sort().slice(0,7);
+    const summaries = dayList.map(date=>{
+      const d = days[date];
+      const sunrise = wx.daily.sunrise[dayList.indexOf(date)];
+      const sunset  = wx.daily.sunset[dayList.indexOf(date)];
+      const srH = sunrise ? new Date(sunrise).getHours() : 7;
+      const ssH = sunset ? new Date(sunset).getHours() : 18;
+      let best=null;
+      for(const h of d.hours){
+        const hh = new Date(h.time).getHours();
+        if(hh<srH+1 || hh>ssH) continue;
+        const sc = scoreHour(h);
+        if(!best || sc>best.score) best={hour:h, score:sc};
+      }
+      if(!best) best={hour:d.hours[Math.floor(d.hours.length/2)], score:scoreHour(d.hours[Math.floor(d.hours.length/2)])};
+      const v = verdict(best.score);
+      const ws = windState(best.hour.windDir);
+      const reasons = [waveNote(best.hour.wave), windNote(best.hour.wind, ws)];
+      if(best.hour.sst!=null) reasons.push('water '+best.hour.sst.toFixed(1)+'°C, '+
+        (best.hour.sst<15 ? '4/3 wetsuit + boots' : best.hour.sst<18 ? '3/2 wetsuit' : 'spring suit or boardies'));
+      const tides = tidesByDay[date] || [];
+      return {date, v, score:best.score, best, reasons, tides, sunrise, sunset};
+    });
+
+    render(summaries, dayList, extrema);
+    document.getElementById('updated').textContent = 'Forecast updated ' + new Date().toLocaleString();
+  }catch(e){
+    document.getElementById('content').innerHTML =
+      '<div class="err"><b>Could not load forecast.</b><br>'+e.message+'<br>Check your internet connection and that the page is served over http(s) or opened as a local file in a browser that allows API calls.</div>';
+  }
+}
+
+function render(summaries, dayList, extrema){
+  const today = summaries[0];
+  const bestDay = summaries.reduce((a,b)=> b.score>a.score? b:a, summaries[0]);
+  const bestIdx = summaries.indexOf(bestDay);
+
+  // tide lines for today hero: next tide
+  const now = new Date();
+  let nextTide = null;
+  for(const e of extrema){ if(new Date(e.time)>now){ nextTide=e; break; } }
+
+  const todayPassed = new Date(today.best.hour.time) < now;
+  let hero = '<div class="hero"><div class="top"><span class="chip '+today.v.cls+'">'+today.v.label+'</span>'+
+    '<div><div class="title">Today, '+fmtDate(today.date)+'</div>'+
+    '<div class="sub">Best window: '+fmtWindow(today.best.hour.time)+(todayPassed?' (already passed)':'')+' &nbsp;•&nbsp; rating '+today.score.toFixed(1)+'/10</div></div></div>'+
+    '<div class="facts">'+
+      fact('Wave height', (today.best.hour.wave!=null? today.best.hour.wave.toFixed(1)+' m' : 'n/a'))+
+      fact('Swell', (today.best.hour.swell!=null? today.best.hour.swell.toFixed(1)+' m @ '+Math.round(today.best.hour.swellPer)+'s' : 'n/a'))+
+      fact('Wind', (today.best.hour.wind!=null? Math.round(today.best.hour.wind)+' km/h' : 'n/a'))+
+      fact('Water', (today.best.hour.sst!=null? today.best.hour.sst.toFixed(1)+' °C' : 'n/a'))+
+      fact('Sun', fmtTime(today.sunrise)+' – '+fmtTime(today.sunset))+
+      fact('Next tide', nextTide? nextTide.type+' '+fmtTime(nextTide.time) : 'n/a')+
+    '</div><ul id="reasons">'+today.reasons.map(r=>'<li>'+r+'</li>').join('')+'</ul></div>';
+
+  let grid = '<div class="grid">';
+  summaries.forEach((s,i)=>{
+    const tides = s.tides.slice(0,4).map(t=>t.type+' '+fmtTime(t.time)).join(', ') || 'n/a';
+    grid += '<div class="day'+(i===bestIdx?' best':'')+'">'+
+      '<div class="dname">'+fmtDate(s.date, true)+ (i===bestIdx?'<span class="bestflag">Best day</span>':'') +'</div>'+
+      '<div class="ddate">'+fmtDate(s.date)+'</div>'+
+      '<div><span class="dchip '+s.v.cls+'">'+s.v.label+'</span></div>'+
+      '<div class="dmeta">'+
+        '<b>'+Math.round(s.score*10)/10+'/10</b> &nbsp; best around <b>'+fmtWindow(s.best.hour.time)+'</b><br>'+
+        'Wave: <b>'+(s.best.hour.wave!=null? s.best.hour.wave.toFixed(1)+' m' : 'n/a')+'</b> &nbsp; Wind: <b>'+(s.best.hour.wind!=null? Math.round(s.best.hour.wind)+' km/h' : 'n/a')+'</b><br>'+
+        'Tides: <b>'+tides+'</b><br>'+
+        s.reasons[0]+'. '+(s.best.hour.wind!=null? s.reasons[1]+'.' : '')
+      +'</div></div>';
+  });
+  grid += '</div>';
+
+  document.getElementById('content').innerHTML =
+    hero +
+    '<h2>This week</h2>'+grid+
+    '<h2>How to read this</h2><div class="hero"><ul id="reasons" style="margin-top:0">'+
+    '<li><b>GO</b> (7+): small clean waves, fine for a beginner.</li>'+
+    '<li><b>OK</b> (4.5-7): surfable but with a catch (bigger, windier, or choppier).</li>'+
+    '<li><b>SKIP</b> (&lt;4.5): flat, stormy, or too big. Pick another day.</li>'+
+    '<li>Beginner sweet spot: 0.5-1.3 m waves, light to moderate offshore or cross-shore wind, mid-tide. Long-period swell (15s+) is more powerful for its size.</li>'+
+    '<li>Tide times are computed from Open-Meteo sea-level data and are approximate (within about an hour).</li>'+
+    '</ul></div>';
+}
+
+function fmtWindow(iso){ const d=new Date(iso); const h=d.getHours(); return h+':00 – '+(h+1)+':00'; }
+function fmtDate(iso, short){
+  const d=new Date(iso+'T12:00:00');
+  if(short) return d.toLocaleDateString([], {weekday:'short'});
+  return d.toLocaleDateString([], {weekday:'short', day:'numeric', month:'short'});
+}
+function fact(k,v){ return '<div class="fact"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
+
+load();
+</script>
+</body>
+</html>
