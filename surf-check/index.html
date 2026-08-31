@@ -61,11 +61,30 @@
   a{color:var(--accent);}
   .err{background:#3a1d1d; border:1px solid #7a2e2e; color:#ffc9c9; padding:16px; border-radius:12px; margin-top:16px; line-height:1.6;}
   .loading{color:var(--dim); margin-top:20px; font-size:.9rem;}
+  .compare-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
+  .beach-card{appearance:none; width:100%; text-align:left; font:inherit; color:inherit; background:var(--card); border:1px solid #1d4b7a; border-radius:14px; padding:15px; cursor:pointer;}
+  .beach-card:hover,.beach-card:focus-visible{border-color:var(--accent); outline:none;}
+  .beach-card.selected{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}
+  .beach-card-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .beach-card-name{font-size:.98rem; font-weight:800;}
+  .beach-card-area{color:var(--dim); font-size:.7rem; margin-top:2px;}
+  .pick{color:var(--accent); font-size:.65rem; font-weight:800; text-transform:uppercase; letter-spacing:.6px; margin-bottom:5px;}
+  .beach-card .chip{font-size:.78rem; padding:4px 10px;}
+  .beach-card-windows{display:flex; flex-wrap:wrap; gap:5px; margin-top:11px;}
+  .beach-card .window{font-size:.69rem; padding:4px 7px;}
+  .beach-card-meta{color:#d7e8f8; font-size:.76rem; margin-top:10px;}
+  .beach-switcher{position:sticky; top:0; z-index:5; background:rgba(11,31,51,.96); backdrop-filter:blur(8px); margin:22px -6px 0; padding:10px 6px;}
+  .beach-switcher label{display:block; color:var(--dim); font-size:.68rem; font-weight:800; letter-spacing:.7px; text-transform:uppercase; margin-bottom:5px;}
+  .beach-switcher select{appearance:none; width:100%; min-height:44px; color:var(--ink); background:var(--card) linear-gradient(45deg,transparent 50%,var(--accent) 50%) calc(100% - 18px) 19px/6px 6px no-repeat; border:1px solid var(--border); border-radius:10px; padding:9px 38px 9px 12px; font:inherit; font-weight:700;}
+  .detail-title{font-size:1.15rem; margin-top:10px;}
+  .detail-sub{color:var(--dim); font-size:.76rem; margin-top:3px;}
+  .unavailable{color:var(--dim); font-size:.8rem; margin-top:12px;}
   @media (max-width:480px){
     body{padding:16px 12px 50px;}
     .hero{padding:16px;}
     .grid{grid-template-columns:1fr;}
     .facts{grid-template-columns:1fr 1fr;}
+    .compare-grid{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -73,7 +92,7 @@
 <div class="wrap">
   <header>
     <h1>🏄 Beginner Surf Check</h1>
-    <p>Point Roadknight, Anglesea VIC &nbsp;•&nbsp; plain-English surf conditions for learning surfers</p>
+    <p>Anglesea + Torquay, VIC &nbsp;•&nbsp; compare plain-English conditions at four beginner beaches</p>
     <div id="updated"></div>
   </header>
 
@@ -87,15 +106,19 @@
 </div>
 
 <script>
-const LAT = -38.402, LON = 144.174;           // Point Roadknight
-const BEACH = { name:'Point Roadknight', offshore:305, onshore:135, cone:50 };
 const TIME_ZONE = 'Australia/Melbourne';
+const BEACHES = [
+  {id:'roadknight', name:'Point Roadknight', area:'Anglesea', lat:-38.4249, lon:144.1812, onshore:135, cone:50},
+  {id:'anglesea', name:'Anglesea Main Beach', area:'Anglesea', lat:-38.4151, lon:144.1872, onshore:135, cone:50},
+  {id:'cosy-corner', name:'Cosy Corner', area:'Torquay', lat:-38.3370, lon:144.3235, onshore:115, cone:50},
+  {id:'torquay-surf', name:'Torquay Surf Beach', area:'Torquay', lat:-38.3427, lon:144.3195, onshore:135, cone:50}
+].map(b=>({...b, offshore:(b.onshore+180)%360}));
 
 function angDiff(a,b){ let d=Math.abs(a-b)%360; return d>180?360-d:d; }
-function windState(dir){
+function windState(dir, beach){
   if(dir==null) return {kind:'unknown', score:5};
-  if(angDiff(dir, BEACH.offshore) <= BEACH.cone) return {kind:'offshore', score:10};
-  if(angDiff(dir, BEACH.onshore) <= BEACH.cone) return {kind:'onshore', score:2};
+  if(angDiff(dir, beach.offshore) <= beach.cone) return {kind:'offshore', score:10};
+  if(angDiff(dir, beach.onshore) <= beach.cone) return {kind:'onshore', score:2};
   return {kind:'cross', score:6};
 }
 function waveScore(h){
@@ -143,7 +166,7 @@ function windNote(s, ws){
 function scoreHour(hour){
   let s = 0.50*waveScore(hour.wave)
         + 0.25*windSpeedScore(hour.wind)
-        + 0.25*windState(hour.windDir).score
+        + 0.25*windState(hour.windDir, hour.beach).score
         + gustPenalty(hour.gust);
   // wave size dominates for a beginner: big waves can never be GO
   if(hour.wave!=null && hour.wave>2.0) s = Math.min(s, 4.4);   // max OK-ish, usually SKIP
@@ -185,7 +208,7 @@ function daylightBounds(sunrise, sunset){
   };
 }
 function reasonsFor(hour){
-  const reasons = [waveNote(hour.wave), windNote(hour.wind, windState(hour.windDir))];
+  const reasons = [waveNote(hour.wave), windNote(hour.wind, windState(hour.windDir, hour.beach))];
   if(hour.sst!=null) reasons.push('water '+hour.sst.toFixed(1)+'°C, '+
     (hour.sst<15 ? '4/3 wetsuit + boots' : hour.sst<18 ? '3/2 wetsuit' : 'spring suit or boardies'));
   return reasons;
@@ -208,12 +231,11 @@ async function fetchJson(url, tries){
   }
 }
 
-async function load(){
-  try{
-    const marineUrl = 'https://marine-api.open-meteo.com/v1/marine?latitude='+LAT+'&longitude='+LON+
+async function loadBeach(beach){
+    const marineUrl = 'https://marine-api.open-meteo.com/v1/marine?latitude='+beach.lat+'&longitude='+beach.lon+
       '&timezone=Australia%2FMelbourne&forecast_days=8'+
       '&hourly=wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_period,sea_surface_temperature,sea_level_height_msl';
-    const wxUrl = 'https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LON+
+    const wxUrl = 'https://api.open-meteo.com/v1/forecast?latitude='+beach.lat+'&longitude='+beach.lon+
       '&timezone=Australia%2FMelbourne&forecast_days=8'+
       '&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=sunrise,sunset';
 
@@ -224,7 +246,7 @@ async function load(){
 
     const H = marine.hourly;
     const hours = H.time.map((t,i)=>({
-      time: t, date: dayKey(t),
+      time: t, date: dayKey(t), beach,
       slotEnd: H.time[i+1] || addHour(t),
       wave: H.wave_height[i], waveDir: H.wave_direction[i], period: H.wave_period[i],
       swell: H.swell_wave_height[i], swellPer: H.swell_wave_period[i],
@@ -284,7 +306,22 @@ async function load(){
       return {date, v, score, best, windows, allWindows, daylightHours, bounds, reasons, tides, sunrise, sunset};
     });
 
-    render(summaries, extrema);
+    return {beach, summaries, extrema};
+}
+
+async function load(){
+  try{
+    const settled = await Promise.allSettled(BEACHES.map(loadBeach));
+    const forecasts = settled.map((result,i)=>result.status==='fulfilled'
+      ? result.value : {beach:BEACHES[i], error:result.reason});
+    const available = forecasts.filter(f=>!f.error);
+    if(!available.length) throw new Error('No beach forecasts were available');
+    const requested = new URLSearchParams(location.search).get('beach');
+    let remembered = null;
+    try{ remembered=localStorage.getItem('surf-check-beach'); }catch(e){}
+    const requestedForecast = available.find(f=>f.beach.id===requested) || available.find(f=>f.beach.id===remembered);
+    const selected = requestedForecast || rankedForecasts(available, melbourneNowIso())[0];
+    renderApp(forecasts, selected.beach.id);
     document.getElementById('updated').textContent = 'Forecast checked ' + new Date().toLocaleString('en-AU', {
       timeZone:TIME_ZONE, weekday:'short', hour:'numeric', minute:'2-digit'
     });
@@ -294,7 +331,57 @@ async function load(){
   }
 }
 
-function render(summaries, extrema){
+let forecastState=[];
+
+function rankedForecasts(forecasts, nowIso){
+  const rank={GO:2,OK:1,SKIP:0};
+  return forecasts.map(f=>({...f, featured:nextAvailableSummary(f.summaries, nowIso)}))
+    .sort((a,b)=>{
+      const av=a.featured, bv=b.featured;
+      if(!av) return bv?1:0;
+      if(!bv) return -1;
+      return rank[bv.v.label]-rank[av.v.label] || bv.score-av.score || a.beach.name.localeCompare(b.beach.name);
+    });
+}
+
+function renderApp(forecasts, selectedId){
+  forecastState=forecasts;
+  const nowIso=melbourneNowIso();
+  const available=forecasts.filter(f=>!f.error);
+  const ranked=rankedForecasts(available, nowIso);
+  const selected=available.find(f=>f.beach.id===selectedId) || ranked[0];
+  let comparison='<h2>Where should I surf?</h2><div class="compare-grid">';
+  ranked.forEach((f,i)=>{
+    const feature=f.featured;
+    const v=feature?feature.v:{label:'SKIP',cls:'skip'};
+    const when=feature?(feature.date===dayKey(nowIso)?'Today':fmtDate(feature.date)):'';
+    comparison+='<button class="beach-card'+(f.beach.id===selected.beach.id?' selected':'')+'" data-beach="'+f.beach.id+'" aria-pressed="'+(f.beach.id===selected.beach.id)+'">'+
+      (i===0&&feature?'<div class="pick">Best pick</div>':'')+'<div class="beach-card-head"><div><div class="beach-card-name">'+f.beach.name+'</div><div class="beach-card-area">'+f.beach.area+(when?' · '+when:'')+'</div></div>'+
+      '<span class="chip '+v.cls+'">'+v.label+'</span></div>'+
+      (feature?'<div class="beach-card-windows">'+windowPills(feature.windows,nowIso)+'</div><div class="beach-card-meta">'+
+        feature.best.hour.wave.toFixed(1)+' m waves · '+Math.round(feature.best.hour.wind)+' km/h wind</div>':'<div class="unavailable">No suitable daylight session in the forecast.</div>')+
+      '</button>';
+  });
+  forecasts.filter(f=>f.error).forEach(f=>{
+    comparison+='<div class="beach-card" aria-disabled="true"><div class="beach-card-name">'+f.beach.name+'</div><div class="beach-card-area">'+f.beach.area+'</div><div class="unavailable">Forecast unavailable</div></div>';
+  });
+  comparison+='</div>';
+  const options=available.map(f=>'<option value="'+f.beach.id+'"'+(f.beach.id===selected.beach.id?' selected':'')+'>'+f.beach.name+'</option>').join('');
+  const switcher='<div class="beach-switcher"><label for="beach-select">Detailed forecast</label><select id="beach-select">'+options+'</select></div>';
+  document.getElementById('content').innerHTML=comparison+switcher+renderDetail(selected);
+  document.querySelectorAll('[data-beach]').forEach(button=>button.addEventListener('click',()=>selectBeach(button.dataset.beach,true)));
+  document.getElementById('beach-select').addEventListener('change',e=>selectBeach(e.target.value,false));
+}
+
+function selectBeach(id, scrollToDetail){
+  try{ localStorage.setItem('surf-check-beach',id); }catch(e){}
+  const url=new URL(location.href); url.searchParams.set('beach',id); history.replaceState(null,'',url);
+  renderApp(forecastState,id);
+  if(scrollToDetail) document.querySelector('.beach-switcher').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderDetail(forecast){
+  const {beach,summaries,extrema}=forecast;
   const nowIso = melbourneNowIso();
   const todayKey = dayKey(nowIso);
   const featured = nextAvailableSummary(summaries, nowIso);
@@ -345,8 +432,7 @@ function render(summaries, extrema){
   });
   grid += '</div>';
 
-  document.getElementById('content').innerHTML =
-    hero +
+  return '<div class="detail-title">'+beach.name+'</div><div class="detail-sub">'+beach.area+', Victoria</div>'+hero+
     '<h2>This week</h2>'+grid+
     '<h2>How to read this</h2><div class="hero"><ul class="reasons" style="margin-top:0">'+
     '<li><b>GO</b> (7+): small clean waves, fine for a beginner.</li>'+
