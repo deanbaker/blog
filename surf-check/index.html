@@ -6,8 +6,8 @@
 <title>Beginner Surf Check — Point Roadknight</title>
 <style>
   :root{
-    --bg:#0b1f33; --card:#12304e; --card2:#16395c; --ink:#eaf4ff; --dim:#9db8d4;
-    --go:#0a8f4f; --ok:#d97706; --skip:#dc2626; --accent:#38bdf8;
+    --bg:#0b1f33; --card:#12304e; --card2:#16395c; --ink:#eaf4ff; --dim:#a9c0d8;
+    --go:#07834a; --ok:#c96b08; --skip:#c92b2b; --accent:#38bdf8; --border:#285783;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -19,33 +19,54 @@
 
   /* Today hero */
   .hero{background:var(--card); border:1px solid #1d4b7a; border-radius:16px; padding:20px; margin-top:16px;}
-  .hero .top{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
-  .chip{font-weight:700; font-size:1.5rem; padding:8px 18px; border-radius:999px; color:#fff;}
-  .chip.go{background:var(--go);} .chip.ok{background:var(--ok);} .chip.skip{background:var(--skip);}
+  .hero .eyebrow{color:var(--accent); font-size:.72rem; font-weight:800; letter-spacing:.9px; text-transform:uppercase; margin-bottom:8px;}
+  .hero .top{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;}
+  .chip{display:inline-block; font-weight:800; font-size:1rem; padding:6px 14px; border-radius:999px; color:#fff; letter-spacing:.3px;}
+  .hero .chip{font-size:1.35rem; padding:8px 18px;}
+  .chip.go{background:var(--go);} .chip.ok{background:var(--ok);} .chip.skip{background:var(--skip);} .chip.done{background:#536b82;}
   .hero .title{font-size:1.05rem; font-weight:600;}
-  .hero .sub{color:var(--dim); font-size:.85rem; margin-top:2px;}
+  .hero .sub{color:var(--dim); font-size:.85rem; margin-top:5px;}
+  .hero .rating{font-size:1.55rem; font-weight:800; white-space:nowrap;}
+  .hero .rating span{font-size:.8rem; color:var(--dim); font-weight:500;}
   .facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:16px;}
   .fact{background:var(--card2); border-radius:10px; padding:10px 12px;}
   .fact .k{font-size:.7rem; text-transform:uppercase; letter-spacing:.8px; color:var(--dim);}
   .fact .v{font-size:1.05rem; font-weight:600; margin-top:3px;}
-  #reasons{margin-top:14px; font-size:.9rem; line-height:1.55; color:#cfe3f7;}
-  #reasons li{margin-left:18px;}
+  .reasons{margin-top:14px; font-size:.9rem; line-height:1.55; color:#cfe3f7;}
+  .reasons li{margin-left:18px;}
 
   h2{font-size:.95rem; text-transform:uppercase; letter-spacing:1px; color:var(--dim); margin:26px 0 10px;}
   .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px;}
-  .day{background:var(--card); border:1px solid #1d4b7a; border-radius:14px; padding:14px;}
+  .day{background:var(--card); border:1px solid #1d4b7a; border-radius:14px; padding:16px;}
   .day.best{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}
-  .day .dname{font-weight:700; font-size:.95rem;}
-  .day .ddate{color:var(--dim); font-size:.75rem;}
-  .day .dchip{display:inline-block; font-weight:700; font-size:.8rem; padding:3px 12px; border-radius:999px; color:#fff; margin-top:8px;}
-  .day .dmeta{margin-top:10px; font-size:.82rem; color:#cfe3f7; line-height:1.6;}
-  .day .dmeta b{color:#fff;}
+  .day-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .day .dname{font-weight:800; font-size:1.05rem;}
+  .day .ddate{color:var(--dim); font-size:.78rem; margin-top:2px;}
+  .day-score{display:flex; align-items:baseline; gap:5px; margin-top:14px;}
+  .day-score strong{font-size:1.35rem;}
+  .day-score span{color:var(--dim); font-size:.72rem;}
+  .session-label{color:var(--dim); font-size:.68rem; font-weight:700; letter-spacing:.7px; text-transform:uppercase; margin-top:13px;}
+  .windows{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+  .window{background:var(--card2); border:1px solid var(--border); border-radius:8px; padding:5px 8px; font-size:.76rem; font-weight:700;}
+  .window.go{border-color:#1aa769;} .window.ok{border-color:#e28b2f;} .window.passed{opacity:.58;}
+  .conditions{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:14px;}
+  .condition{background:rgba(7,25,43,.28); border-radius:8px; padding:8px 9px;}
+  .condition .k{color:var(--dim); font-size:.65rem; text-transform:uppercase; letter-spacing:.5px;}
+  .condition .v{font-size:.83rem; font-weight:700; margin-top:2px;}
+  .tides{color:#d8e9f9; font-size:.76rem; line-height:1.5; margin-top:11px;}
+  .day-note{border-top:1px solid rgba(157,184,212,.18); color:#cfe3f7; font-size:.77rem; line-height:1.45; margin-top:11px; padding-top:10px;}
   .bestflag{color:var(--accent); font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-left:6px;}
 
   footer{color:var(--dim); font-size:.75rem; line-height:1.6; margin-top:30px;}
   a{color:var(--accent);}
   .err{background:#3a1d1d; border:1px solid #7a2e2e; color:#ffc9c9; padding:16px; border-radius:12px; margin-top:16px; line-height:1.6;}
   .loading{color:var(--dim); margin-top:20px; font-size:.9rem;}
+  @media (max-width:480px){
+    body{padding:16px 12px 50px;}
+    .hero{padding:16px;}
+    .grid{grid-template-columns:1fr;}
+    .facts{grid-template-columns:1fr 1fr;}
+  }
 </style>
 </head>
 <body>
@@ -68,6 +89,7 @@
 <script>
 const LAT = -38.402, LON = 144.174;           // Point Roadknight
 const BEACH = { name:'Point Roadknight', offshore:305, onshore:135, cone:50 };
+const TIME_ZONE = 'Australia/Melbourne';
 
 function angDiff(a,b){ let d=Math.abs(a-b)%360; return d>180?360-d:d; }
 function windState(dir){
@@ -119,7 +141,7 @@ function windNote(s, ws){
   return 'light '+dir+' wind '+Math.round(s)+' km/h, clean';
 }
 function scoreHour(hour){
-  let s = 0.45*waveScore(hour.wave)
+  let s = 0.50*waveScore(hour.wave)
         + 0.25*windSpeedScore(hour.wind)
         + 0.25*windState(hour.windDir).score
         + gustPenalty(hour.gust);
@@ -133,9 +155,41 @@ function verdict(score){
   if(score>=4.5) return {label:'OK', cls:'ok'};
   return {label:'SKIP', cls:'skip'};
 }
-function fmtTime(t){ const d=new Date(t); return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
-function fmtHour(iso){ const d=new Date(iso); return d.toLocaleTimeString([], {hour:'numeric'}); }
+function hourLabel(iso){
+  const h = Number(iso.slice(11,13));
+  const m = iso.slice(14,16);
+  const h12 = h%12 || 12;
+  return h12+(m==='00'?'':':'+m)+(h>=12?'pm':'am');
+}
+function fmtTime(iso){ return iso ? hourLabel(iso) : 'n/a'; }
 function dayKey(iso){ return iso.slice(0,10); }
+function melbourneNowIso(){
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone:TIME_ZONE, year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+  }).formatToParts(new Date()).reduce((o,p)=>(o[p.type]=p.value,o),{});
+  return parts.year+'-'+parts.month+'-'+parts.day+'T'+parts.hour+':'+parts.minute;
+}
+function addHour(iso){
+  const d = new Date(iso+':00Z');
+  d.setUTCHours(d.getUTCHours()+1);
+  return d.toISOString().slice(0,16);
+}
+function daylightBounds(sunrise, sunset){
+  const srHour = Number(sunrise.slice(11,13)) + (sunrise.slice(14,16)==='00' ? 0 : 1);
+  const ssHour = Number(sunset.slice(11,13));
+  const date = dayKey(sunrise);
+  return {
+    start:date+'T'+String(srHour).padStart(2,'0')+':00',
+    end:date+'T'+String(ssHour).padStart(2,'0')+':00'
+  };
+}
+function reasonsFor(hour){
+  const reasons = [waveNote(hour.wave), windNote(hour.wind, windState(hour.windDir))];
+  if(hour.sst!=null) reasons.push('water '+hour.sst.toFixed(1)+'°C, '+
+    (hour.sst<15 ? '4/3 wetsuit + boots' : hour.sst<18 ? '3/2 wetsuit' : 'spring suit or boardies'));
+  return reasons;
+}
 
 async function fetchJson(url, tries){
   tries = tries || 2;
@@ -171,6 +225,7 @@ async function load(){
     const H = marine.hourly;
     const hours = H.time.map((t,i)=>({
       time: t, date: dayKey(t),
+      slotEnd: H.time[i+1] || addHour(t),
       wave: H.wave_height[i], waveDir: H.wave_direction[i], period: H.wave_period[i],
       swell: H.swell_wave_height[i], swellPer: H.swell_wave_period[i],
       sst: H.sea_surface_temperature[i], seaLevel: H.sea_level_height_msl[i],
@@ -204,124 +259,177 @@ async function load(){
     const dayList = Object.keys(days).sort().slice(0,7);
     const summaries = dayList.map(date=>{
       const d = days[date];
-      const sunrise = wx.daily.sunrise[dayList.indexOf(date)];
-      const sunset  = wx.daily.sunset[dayList.indexOf(date)];
-      const srH = sunrise ? new Date(sunrise).getHours() : 7;
-      const ssH = sunset ? new Date(sunset).getHours() : 18;
+      const dailyIdx = wx.daily.time.indexOf(date);
+      const sunrise = wx.daily.sunrise[dailyIdx];
+      const sunset  = wx.daily.sunset[dailyIdx];
+      const bounds = sunrise && sunset ? daylightBounds(sunrise, sunset) : {start:date+'T07:00', end:date+'T18:00'};
       let best=null;
       for(const h of d.hours){
-        const hh = new Date(h.time).getHours();
-        if(hh<srH+1 || hh>ssH) continue;
+        if(h.time<bounds.start || h.time>=bounds.end) continue;
         const sc = scoreHour(h);
         if(!best || sc>best.score) best={hour:h, score:sc};
       }
       if(!best) best={hour:d.hours[Math.floor(d.hours.length/2)], score:scoreHour(d.hours[Math.floor(d.hours.length/2)])};
-      // usable session windows: contiguous non-SKIP hours, GO if any hour is GO;
-      // keep the 3 longest/best, display in time order
-      const windows = findWindows(d.hours, srH, ssH)
-        .sort((a,b)=> b.hours.length-a.hours.length || b.score-a.score).slice(0,3)
-        .sort((a,b)=> a.start < b.start ? -1 : 1);
-      const score = windows.length ? windows[0].score : best.score;
-      const v = windows.length ? windows[0].v : verdict(best.score);
-      const ws = windState(best.hour.windDir);
-      const reasons = [waveNote(best.hour.wave), windNote(best.hour.wind, ws)];
-      if(best.hour.sst!=null) reasons.push('water '+best.hour.sst.toFixed(1)+'°C, '+
-        (best.hour.sst<15 ? '4/3 wetsuit + boots' : best.hour.sst<18 ? '3/2 wetsuit' : 'spring suit or boardies'));
+      const daylightHours = d.hours.filter(h=>h.time>=bounds.start && h.time<bounds.end);
+      const allWindows = findWindows(daylightHours, bounds);
+      const windows = findBestSlots(daylightHours, bounds);
+      const score = best.score;
+      const v = verdict(score);
+      const reasons = reasonsFor(best.hour);
       const tides = tidesByDay[date] || [];
-      return {date, v, score, best, windows, reasons, tides, sunrise, sunset};
+      return {date, v, score, best, windows, allWindows, daylightHours, bounds, reasons, tides, sunrise, sunset};
     });
 
-    render(summaries, dayList, extrema);
-    document.getElementById('updated').textContent = 'Forecast updated ' + new Date().toLocaleString();
+    render(summaries, extrema);
+    document.getElementById('updated').textContent = 'Forecast checked ' + new Date().toLocaleString('en-AU', {
+      timeZone:TIME_ZONE, weekday:'short', hour:'numeric', minute:'2-digit'
+    });
   }catch(e){
     document.getElementById('content').innerHTML =
       '<div class="err"><b>Could not load forecast.</b><br>'+e.message+'<br>Check your internet connection and that the page is served over http(s) or opened as a local file in a browser that allows API calls.</div>';
   }
 }
 
-function render(summaries, dayList, extrema){
-  const today = summaries[0];
-  const bestDay = summaries.reduce((a,b)=> b.score>a.score? b:a, summaries[0]);
+function render(summaries, extrema){
+  const nowIso = melbourneNowIso();
+  const todayKey = dayKey(nowIso);
+  const featured = nextAvailableSummary(summaries, nowIso);
+  const upcomingDays = summaries.filter(s=>s.date>todayKey || s.allWindows.some(w=>w.end>nowIso));
+  const bestDay = (upcomingDays.length?upcomingDays:summaries).reduce((a,b)=>b.score>a.score?b:a);
   const bestIdx = summaries.indexOf(bestDay);
 
-  // tide lines for today hero: next tide
-  const now = new Date();
   let nextTide = null;
-  for(const e of extrema){ if(new Date(e.time)>now){ nextTide=e; break; } }
+  for(const e of extrema){ if(e.time>nowIso){ nextTide=e; break; } }
 
-  let hero = '<div class="hero"><div class="top"><span class="chip '+today.v.cls+'">'+today.v.label+'</span>'+
-    '<div><div class="title">Today, '+fmtDate(today.date)+'</div>'+
-    '<div class="sub">Windows: '+fmtWindows(today.windows, true)+' &nbsp;•&nbsp; rating '+today.score.toFixed(1)+'/10</div></div></div>'+
-    '<div class="facts">'+
-      fact('Wave height', (today.best.hour.wave!=null? today.best.hour.wave.toFixed(1)+' m' : 'n/a'))+
-      fact('Swell', (today.best.hour.swell!=null? today.best.hour.swell.toFixed(1)+' m @ '+Math.round(today.best.hour.swellPer)+'s' : 'n/a'))+
-      fact('Wind', (today.best.hour.wind!=null? Math.round(today.best.hour.wind)+' km/h' : 'n/a'))+
-      fact('Water', (today.best.hour.sst!=null? today.best.hour.sst.toFixed(1)+' °C' : 'n/a'))+
-      fact('Sun', fmtTime(today.sunrise)+' – '+fmtTime(today.sunset))+
+  let hero;
+  if(featured){
+    const isToday = featured.date===todayKey;
+    hero = '<div class="hero"><div class="eyebrow">'+(isToday?'Best remaining today':'Next surfable day')+'</div>'+
+      '<div class="top"><div><div class="title">'+(isToday?'Today, ':'')+fmtDate(featured.date)+'</div>'+
+      '<div class="sub">'+windowPills(featured.windows, nowIso)+'</div></div>'+
+      '<div><span class="chip '+featured.v.cls+'">'+featured.v.label+'</span> '+
+      '<span class="rating">'+featured.score.toFixed(1)+'<span>/10</span></span></div></div>'+
+      '<div class="facts">'+
+      fact('Wave height', (featured.best.hour.wave!=null? featured.best.hour.wave.toFixed(1)+' m' : 'n/a'))+
+      fact('Swell', (featured.best.hour.swell!=null && featured.best.hour.swellPer!=null ? featured.best.hour.swell.toFixed(1)+' m @ '+Math.round(featured.best.hour.swellPer)+'s' : 'n/a'))+
+      fact('Wind', (featured.best.hour.wind!=null? Math.round(featured.best.hour.wind)+' km/h' : 'n/a'))+
+      fact('Water', (featured.best.hour.sst!=null? featured.best.hour.sst.toFixed(1)+' °C' : 'n/a'))+
+      fact('Sun', fmtTime(featured.sunrise)+' – '+fmtTime(featured.sunset))+
       fact('Next tide', nextTide? nextTide.type+' '+fmtTime(nextTide.time) : 'n/a')+
-    '</div><ul id="reasons">'+today.reasons.map(r=>'<li>'+r+'</li>').join('')+'</ul></div>';
+      '</div><ul class="reasons">'+featured.reasons.map(r=>'<li>'+r+'</li>').join('')+'</ul></div>';
+  }else{
+    hero = '<div class="hero"><div class="eyebrow">Forecast summary</div><div class="top">'+
+      '<div><div class="title">No surfable daylight windows</div><div class="sub">Check again when the forecast updates.</div></div>'+
+      '<span class="chip skip">SKIP</span></div></div>';
+  }
 
   let grid = '<div class="grid">';
   summaries.forEach((s,i)=>{
-    const tides = s.tides.slice(0,4).map(t=>t.type+' '+fmtTime(t.time)).join(', ') || 'n/a';
+    const dayDone = s.date===todayKey && s.allWindows.length>0 && s.allWindows.every(w=>w.end<=nowIso);
+    const cardV = dayDone ? {label:'DONE', cls:'done'} : s.v;
+    const tides = s.tides.slice(0,4).map(t=>(t.type==='High'?'High ':'Low ')+fmtTime(t.time)).join(' · ') || 'n/a';
     grid += '<div class="day'+(i===bestIdx?' best':'')+'">'+
-      '<div class="dname">'+fmtDate(s.date, true)+ (i===bestIdx?'<span class="bestflag">Best day</span>':'') +'</div>'+
-      '<div class="ddate">'+fmtDate(s.date)+'</div>'+
-      '<div><span class="dchip '+s.v.cls+'">'+s.v.label+'</span></div>'+
-      '<div class="dmeta">'+
-        '<b>'+Math.round(s.score*10)/10+'/10</b> &nbsp; '+fmtWindows(s.windows)+'<br>'+
-        'Wave: <b>'+(s.best.hour.wave!=null? s.best.hour.wave.toFixed(1)+' m' : 'n/a')+'</b> &nbsp; Wind: <b>'+(s.best.hour.wind!=null? Math.round(s.best.hour.wind)+' km/h' : 'n/a')+'</b><br>'+
-        'Tides: <b>'+tides+'</b><br>'+
-        s.reasons[0]+'. '+(s.best.hour.wind!=null? s.reasons[1]+'.' : '')
-      +'</div></div>';
+      '<div class="day-head"><div><div class="dname">'+fmtDate(s.date, true)+
+      (i===bestIdx?'<span class="bestflag">Best day</span>':'')+'</div><div class="ddate">'+fmtCalendarDate(s.date)+'</div></div>'+
+      '<span class="chip '+cardV.cls+'">'+cardV.label+'</span></div>'+
+      '<div class="day-score"><strong>'+s.score.toFixed(1)+'/10</strong><span>'+(dayDone?'best conditions earlier':'best conditions')+'</span></div>'+
+      '<div class="session-label">Best time</div><div class="windows">'+windowPills(s.windows, s.date===todayKey?nowIso:null)+'</div>'+
+      '<div class="conditions">'+condition('Wave', s.best.hour.wave!=null?s.best.hour.wave.toFixed(1)+' m':'n/a')+
+      condition('Wind', s.best.hour.wind!=null?Math.round(s.best.hour.wind)+' km/h':'n/a')+'</div>'+
+      '<div class="tides"><b>Tides</b> &nbsp;'+tides+'</div>'+
+      '<div class="day-note">'+s.reasons[0]+'. '+(s.best.hour.wind!=null?s.reasons[1]+'.':'')+'</div></div>';
   });
   grid += '</div>';
 
   document.getElementById('content').innerHTML =
     hero +
     '<h2>This week</h2>'+grid+
-    '<h2>How to read this</h2><div class="hero"><ul id="reasons" style="margin-top:0">'+
+    '<h2>How to read this</h2><div class="hero"><ul class="reasons" style="margin-top:0">'+
     '<li><b>GO</b> (7+): small clean waves, fine for a beginner.</li>'+
     '<li><b>OK</b> (4.5-7): surfable but with a catch (bigger, windier, or choppier).</li>'+
     '<li><b>SKIP</b> (&lt;4.5): flat, stormy, or too big. Pick another day.</li>'+
     '<li>Beginner sweet spot: 0.5-1.3 m waves, light to moderate offshore or cross-shore wind, mid-tide. Long-period swell (15s+) is more powerful for its size.</li>'+
-    '<li>Each day shows up to 3 session windows (the longest, best ones), in time order; "GO" means that whole stretch is fine to surf, "(passed)" means it is already over.</li>'+
+    '<li>Each day highlights its highest-scoring 2–3 hour session. Every hour in a GO session is rated GO; passed sessions are dimmed.</li>'+
     '<li>Tide times are computed from Open-Meteo sea-level data and are approximate (within about an hour).</li>'+
     '</ul></div>';
 }
 
-function fmtWindow(iso){ const d=new Date(iso); const h=d.getHours(); return h+':00 – '+(h+1)+':00'; }
-function hourLabel(d){ let h=d.getHours(); const ap=h>=12?'pm':'am'; let h12=h%12; if(h12===0)h12=12; return h12+ap; }
-function fmtWindows(wins, markPassed){
-  if(!wins.length) return 'no good windows';
-  const now = markPassed ? new Date() : null;
+function windowPills(wins, nowIso){
+  if(!wins.length) return '<span class="window passed">No surfable window</span>';
   return wins.map(w=>{
-    const start = hourLabel(new Date(w.start));
-    const end = hourLabel(new Date(w.end));
-    const range = start===end ? start : start+'–'+end;
-    const passed = now && new Date(w.end) < now;
-    return w.v.label+' '+range + (passed?' (passed)':'');
-  }).join(', ');
+    const passed = nowIso && w.end<=nowIso;
+    return '<span class="window '+w.v.cls+(passed?' passed':'')+'">Best '+hourLabel(w.start)+'–'+hourLabel(w.end)+(passed?' · passed':'')+'</span>';
+  }).join('');
 }
-function findWindows(hours, srH, ssH){
+function findWindows(hours, bounds){
   const runs=[]; let cur=null;
   for(const h of hours){
-    const hh=new Date(h.time).getHours();
-    if(hh<srH+1 || hh>ssH) continue;
+    if(h.time<bounds.start || h.time>=bounds.end) continue;
     const sc=scoreHour(h);
     const v=verdict(sc);
     if(v.label==='SKIP'){ cur=null; continue; }
-    if(cur){ cur.hours.push(h); cur.end=h.time; if(sc>cur.score) cur.score=sc; if(v.label==='GO') cur.v=v; }
-    else { cur={v:v, start:h.time, end:h.time, score:sc, hours:[h]}; runs.push(cur); }
+    if(cur && cur.v.label===v.label && cur.end===h.time){
+      cur.hours.push(h); cur.end=h.slotEnd; if(sc>cur.score) cur.score=sc;
+    }else{
+      cur={v:v, start:h.time, end:h.slotEnd, score:sc, hours:[h]}; runs.push(cur);
+    }
   }
   return runs;
 }
+function findBestSlots(hours, bounds){
+  const candidates=[];
+  for(let i=0;i<hours.length;i++){
+    const group=[];
+    for(let j=i;j<hours.length && group.length<3;j++){
+      const h=hours[j];
+      if(h.time<bounds.start || h.time>=bounds.end || verdict(scoreHour(h)).label==='SKIP') break;
+      if(group.length && group[group.length-1].slotEnd!==h.time) break;
+      group.push(h);
+      if(group.length>=2){
+        const scores=group.map(scoreHour);
+        const lowest=Math.min(...scores);
+        candidates.push({
+          v:verdict(lowest), start:group[0].time, end:group[group.length-1].slotEnd,
+          score:scores.reduce((a,b)=>a+b,0)/scores.length, hours:[...group]
+        });
+      }
+    }
+  }
+  if(!candidates.length){
+    const h=hours.find(x=>x.time>=bounds.start && x.time<bounds.end && verdict(scoreHour(x)).label!=='SKIP');
+    return h ? [{v:verdict(scoreHour(h)),start:h.time,end:h.slotEnd,score:scoreHour(h),hours:[h]}] : [];
+  }
+  const rank={GO:2,OK:1};
+  candidates.sort((a,b)=>rank[b.v.label]-rank[a.v.label] || b.score-a.score || b.hours.length-a.hours.length || a.start.localeCompare(b.start));
+  return [candidates[0]];
+}
+function nextAvailableSummary(summaries, nowIso){
+  for(const s of summaries){
+    const start = s.date===dayKey(nowIso) ? nextWholeHour(nowIso) : s.bounds.start;
+    const hours = s.daylightHours.filter(h=>h.time>=start && verdict(scoreHour(h)).label!=='SKIP');
+    if(!hours.length) continue;
+    const best = hours.reduce((a,h)=>{
+      const score=scoreHour(h); return !a || score>a.score ? {hour:h,score} : a;
+    }, null);
+    const windows=findBestSlots(hours, {start, end:s.bounds.end});
+    if(!windows.length) continue;
+    return {...s, best, score:best.score, v:verdict(best.score), windows, reasons:reasonsFor(best.hour)};
+  }
+  return null;
+}
+function nextWholeHour(iso){
+  return iso.slice(14,16)==='00' ? iso.slice(0,13)+':00' : addHour(iso.slice(0,13)+':00');
+}
 function fmtDate(iso, short){
-  const d=new Date(iso+'T12:00:00');
-  if(short) return d.toLocaleDateString([], {weekday:'short'});
-  return d.toLocaleDateString([], {weekday:'short', day:'numeric', month:'short'});
+  const d=new Date(iso+'T12:00:00Z');
+  if(short) return d.toLocaleDateString('en-AU', {weekday:'short', timeZone:'UTC'});
+  return d.toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short', timeZone:'UTC'});
+}
+function fmtCalendarDate(iso){
+  return new Date(iso+'T12:00:00Z').toLocaleDateString('en-AU', {day:'numeric', month:'short', timeZone:'UTC'});
 }
 function fact(k,v){ return '<div class="fact"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
+function condition(k,v){ return '<div class="condition"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
 
 load();
 </script>
