@@ -273,8 +273,12 @@ async function load(){
       const daylightHours = d.hours.filter(h=>h.time>=bounds.start && h.time<bounds.end);
       const allWindows = findWindows(daylightHours, bounds);
       const windows = findBestSlots(daylightHours, bounds);
-      const score = best.score;
-      const v = verdict(score);
+      const topSlot = bestSession(windows);
+      if(topSlot){
+        best = topSlot.hours.reduce((a,h)=>scoreHour(h)>a.score?{hour:h,score:scoreHour(h)}:a, {hour:topSlot.hours[0],score:scoreHour(topSlot.hours[0])});
+      }
+      const score = topSlot ? topSlot.score : best.score;
+      const v = topSlot ? topSlot.v : verdict(score);
       const reasons = reasonsFor(best.hour);
       const tides = tidesByDay[date] || [];
       return {date, v, score, best, windows, allWindows, daylightHours, bounds, reasons, tides, sunrise, sunset};
@@ -333,7 +337,7 @@ function render(summaries, extrema){
       (i===bestIdx?'<span class="bestflag">Best day</span>':'')+'</div><div class="ddate">'+fmtCalendarDate(s.date)+'</div></div>'+
       '<span class="chip '+cardV.cls+'">'+cardV.label+'</span></div>'+
       '<div class="day-score"><strong>'+s.score.toFixed(1)+'/10</strong><span>'+(dayDone?'best conditions earlier':'best conditions')+'</span></div>'+
-      '<div class="session-label">Best time</div><div class="windows">'+windowPills(s.windows, s.date===todayKey?nowIso:null)+'</div>'+
+      '<div class="session-label">Best sessions</div><div class="windows">'+windowPills(s.windows, s.date===todayKey?nowIso:null)+'</div>'+
       '<div class="conditions">'+condition('Wave', s.best.hour.wave!=null?s.best.hour.wave.toFixed(1)+' m':'n/a')+
       condition('Wind', s.best.hour.wind!=null?Math.round(s.best.hour.wind)+' km/h':'n/a')+'</div>'+
       '<div class="tides"><b>Tides</b> &nbsp;'+tides+'</div>'+
@@ -349,7 +353,7 @@ function render(summaries, extrema){
     '<li><b>OK</b> (4.5-7): surfable but with a catch (bigger, windier, or choppier).</li>'+
     '<li><b>SKIP</b> (&lt;4.5): flat, stormy, or too big. Pick another day.</li>'+
     '<li>Beginner sweet spot: 0.5-1.3 m waves, light to moderate offshore or cross-shore wind, mid-tide. Long-period swell (15s+) is more powerful for its size.</li>'+
-    '<li>Each day highlights its highest-scoring 2–3 hour session. Every hour in a GO session is rated GO; passed sessions are dimmed.</li>'+
+    '<li>Each day highlights its best morning and afternoon 2–3 hour sessions when they are surfable. Every hour in a GO session is rated GO; passed sessions are dimmed.</li>'+
     '<li>Tide times are computed from Open-Meteo sea-level data and are approximate (within about an hour).</li>'+
     '</ul></div>';
 }
@@ -358,7 +362,7 @@ function windowPills(wins, nowIso){
   if(!wins.length) return '<span class="window passed">No surfable window</span>';
   return wins.map(w=>{
     const passed = nowIso && w.end<=nowIso;
-    return '<span class="window '+w.v.cls+(passed?' passed':'')+'">Best '+hourLabel(w.start)+'–'+hourLabel(w.end)+(passed?' · passed':'')+'</span>';
+    return '<span class="window '+w.v.cls+(passed?' passed':'')+'">'+w.period+' '+w.v.label+' '+hourLabel(w.start)+'–'+hourLabel(w.end)+(passed?' · passed':'')+'</span>';
   }).join('');
 }
 function findWindows(hours, bounds){
@@ -377,6 +381,18 @@ function findWindows(hours, bounds){
   return runs;
 }
 function findBestSlots(hours, bounds){
+  const noon=dayKey(bounds.start)+'T12:00';
+  const periods=[
+    {label:'AM', start:bounds.start, end:bounds.end<noon?bounds.end:noon},
+    {label:'PM', start:bounds.start>noon?bounds.start:noon, end:bounds.end}
+  ];
+  return periods.flatMap(period=>{
+    if(period.start>=period.end) return [];
+    const slot=findBestSlot(hours, period);
+    return slot ? [{...slot, period:period.label}] : [];
+  });
+}
+function findBestSlot(hours, bounds){
   const candidates=[];
   for(let i=0;i<hours.length;i++){
     const group=[];
@@ -390,30 +406,34 @@ function findBestSlots(hours, bounds){
         const lowest=Math.min(...scores);
         candidates.push({
           v:verdict(lowest), start:group[0].time, end:group[group.length-1].slotEnd,
-          score:scores.reduce((a,b)=>a+b,0)/scores.length, hours:[...group]
+          score:lowest, quality:scores.reduce((a,b)=>a+b,0)/scores.length, hours:[...group]
         });
       }
     }
   }
   if(!candidates.length){
-    const h=hours.find(x=>x.time>=bounds.start && x.time<bounds.end && verdict(scoreHour(x)).label!=='SKIP');
-    return h ? [{v:verdict(scoreHour(h)),start:h.time,end:h.slotEnd,score:scoreHour(h),hours:[h]}] : [];
+    const h=hours.filter(x=>x.time>=bounds.start && x.time<bounds.end && verdict(scoreHour(x)).label!=='SKIP')
+      .reduce((best,x)=>!best || scoreHour(x)>scoreHour(best)?x:best,null);
+    return h ? {v:verdict(scoreHour(h)),start:h.time,end:h.slotEnd,score:scoreHour(h),quality:scoreHour(h),hours:[h]} : null;
   }
   const rank={GO:2,OK:1};
-  candidates.sort((a,b)=>rank[b.v.label]-rank[a.v.label] || b.score-a.score || b.hours.length-a.hours.length || a.start.localeCompare(b.start));
-  return [candidates[0]];
+  candidates.sort((a,b)=>rank[b.v.label]-rank[a.v.label] || b.quality-a.quality || b.hours.length-a.hours.length || a.start.localeCompare(b.start));
+  return candidates[0];
+}
+function bestSession(windows){
+  const rank={GO:2,OK:1};
+  return [...windows].sort((a,b)=>rank[b.v.label]-rank[a.v.label] || b.quality-a.quality || b.hours.length-a.hours.length)[0] || null;
 }
 function nextAvailableSummary(summaries, nowIso){
   for(const s of summaries){
     const start = s.date===dayKey(nowIso) ? nextWholeHour(nowIso) : s.bounds.start;
     const hours = s.daylightHours.filter(h=>h.time>=start && verdict(scoreHour(h)).label!=='SKIP');
     if(!hours.length) continue;
-    const best = hours.reduce((a,h)=>{
-      const score=scoreHour(h); return !a || score>a.score ? {hour:h,score} : a;
-    }, null);
     const windows=findBestSlots(hours, {start, end:s.bounds.end});
     if(!windows.length) continue;
-    return {...s, best, score:best.score, v:verdict(best.score), windows, reasons:reasonsFor(best.hour)};
+    const topSlot=bestSession(windows);
+    const best=topSlot.hours.reduce((a,h)=>scoreHour(h)>a.score?{hour:h,score:scoreHour(h)}:a, {hour:topSlot.hours[0],score:scoreHour(topSlot.hours[0])});
+    return {...s, best, score:topSlot.score, v:topSlot.v, windows, reasons:reasonsFor(best.hour)};
   }
   return null;
 }
