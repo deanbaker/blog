@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beginner Surf Check — Point Roadknight</title>
+<title>Beginner Surf Check — Surf Coast</title>
 <style>
   :root{
     --bg:#0b1f33; --card:#12304e; --card2:#16395c; --ink:#eaf4ff; --dim:#a9c0d8;
@@ -15,7 +15,14 @@
   .wrap{max-width:760px; margin:0 auto;}
   header h1{font-size:1.35rem; letter-spacing:.3px;}
   header p{color:var(--dim); font-size:.85rem; margin-top:4px;}
-  #updated{color:var(--dim); font-size:.75rem; margin-top:10px;}
+  .updated-row{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;}
+  #updated{color:var(--dim); font-size:.75rem;}
+  #refresh-button{appearance:none; color:var(--accent); background:transparent; border:1px solid var(--border); border-radius:999px; padding:5px 10px; font:inherit; font-size:.72rem; font-weight:700; cursor:pointer;}
+  #refresh-button:hover,#refresh-button:focus-visible{border-color:var(--accent); outline:none;}
+  #refresh-button:disabled{cursor:wait; opacity:.55;}
+  #pull-refresh{height:0; overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:.76rem; font-weight:700; transition:height .18s ease;}
+  #pull-refresh.visible{height:48px;}
+  #pull-refresh.ready{color:#72e0ae;}
 
   /* Today hero */
   .hero{background:var(--card); border:1px solid #1d4b7a; border-radius:16px; padding:20px; margin-top:16px;}
@@ -93,8 +100,10 @@
   <header>
     <h1>🏄 Beginner Surf Check</h1>
     <p>Anglesea + Torquay, VIC &nbsp;•&nbsp; compare plain-English conditions at four beginner beaches</p>
-    <div id="updated"></div>
+    <div class="updated-row"><div id="updated"></div><button id="refresh-button" type="button">Refresh</button></div>
   </header>
+
+  <div id="pull-refresh" role="status" aria-live="polite">↓ Pull to refresh</div>
 
   <div id="content">
     <div class="loading">Loading forecast from Open-Meteo…</div>
@@ -107,6 +116,8 @@
 
 <script>
 const TIME_ZONE = 'Australia/Melbourne';
+const CACHE_KEY = 'surf-check-forecast-v1';
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 const BEACHES = [
   {id:'roadknight', name:'Point Roadknight', area:'Anglesea', lat:-38.4249, lon:144.1812, onshore:135, cone:50},
   {id:'anglesea', name:'Anglesea Main Beach', area:'Anglesea', lat:-38.4151, lon:144.1872, onshore:135, cone:50},
@@ -231,7 +242,7 @@ async function fetchJson(url, tries){
   }
 }
 
-async function loadBeach(beach){
+async function fetchBeachData(beach){
     const marineUrl = 'https://marine-api.open-meteo.com/v1/marine?latitude='+beach.lat+'&longitude='+beach.lon+
       '&timezone=Australia%2FMelbourne&forecast_days=8'+
       '&hourly=wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_period,sea_surface_temperature,sea_level_height_msl';
@@ -243,7 +254,10 @@ async function loadBeach(beach){
       fetchJson(marineUrl),
       fetchJson(wxUrl)
     ]);
+    return {beachId:beach.id, marine, wx};
+}
 
+function buildForecast(beach, marine, wx){
     const H = marine.hourly;
     const hours = H.time.map((t,i)=>({
       time: t, date: dayKey(t), beach,
@@ -309,26 +323,91 @@ async function loadBeach(beach){
     return {beach, summaries, extrema};
 }
 
-async function load(){
+function readForecastCache(){
   try{
-    const settled = await Promise.allSettled(BEACHES.map(loadBeach));
-    const forecasts = settled.map((result,i)=>result.status==='fulfilled'
-      ? result.value : {beach:BEACHES[i], error:result.reason});
-    const available = forecasts.filter(f=>!f.error);
-    if(!available.length) throw new Error('No beach forecasts were available');
-    const requested = new URLSearchParams(location.search).get('beach');
-    let remembered = null;
-    try{ remembered=localStorage.getItem('surf-check-beach'); }catch(e){}
-    const requestedForecast = available.find(f=>f.beach.id===requested) || available.find(f=>f.beach.id===remembered);
-    const selected = requestedForecast || rankedForecasts(available, melbourneNowIso())[0];
-    renderApp(forecasts, selected.beach.id);
-    document.getElementById('updated').textContent = 'Forecast checked ' + new Date().toLocaleString('en-AU', {
-      timeZone:TIME_ZONE, weekday:'short', hour:'numeric', minute:'2-digit'
-    });
+    const cached=JSON.parse(localStorage.getItem(CACHE_KEY));
+    return cached && Number.isFinite(cached.savedAt) && Array.isArray(cached.raw) ? cached : null;
+  }catch(e){ return null; }
+}
+function writeForecastCache(raw){
+  try{
+    const savedAt=Date.now();
+    localStorage.setItem(CACHE_KEY, JSON.stringify({savedAt,raw}));
+    return savedAt;
+  }catch(e){ return null; }
+}
+function forecastsFromRaw(raw){
+  const byId=new Map(raw.map(item=>[item.beachId,item]));
+  return BEACHES.map(beach=>{
+    const data=byId.get(beach.id);
+    if(!data) return {beach,error:new Error('Forecast unavailable')};
+    try{ return buildForecast(beach,data.marine,data.wx); }
+    catch(error){ return {beach,error}; }
+  });
+}
+function renderForecasts(forecasts){
+  const available=forecasts.filter(f=>!f.error);
+  if(!available.length) throw new Error('No beach forecasts were available');
+  const requested=new URLSearchParams(location.search).get('beach');
+  let remembered=null;
+  try{ remembered=localStorage.getItem('surf-check-beach'); }catch(e){}
+  const selected=available.find(f=>f.beach.id===requested) || available.find(f=>f.beach.id===remembered) || rankedForecasts(available,melbourneNowIso())[0];
+  renderApp(forecasts,selected.beach.id);
+}
+function ageLabel(savedAt){
+  const mins=Math.max(0,Math.floor((Date.now()-savedAt)/60000));
+  if(mins<1) return 'just now';
+  if(mins<60) return mins+'m ago';
+  const hours=Math.floor(mins/60), remainder=mins%60;
+  return hours+'h'+(remainder?' '+remainder+'m':'')+' ago';
+}
+function setForecastStatus(text){ document.getElementById('updated').textContent=text; }
+function setRefreshing(active){
+  const button=document.getElementById('refresh-button');
+  const pull=document.getElementById('pull-refresh');
+  button.disabled=active;
+  button.textContent=active?'Refreshing…':'Refresh';
+  if(active){ pull.classList.add('visible'); pull.textContent='Refreshing forecasts…'; }
+  else{ pull.classList.remove('visible','ready'); pull.textContent='↓ Pull to refresh'; }
+}
+async function refreshForecasts(cached){
+  setRefreshing(true);
+  try{
+    const settled=await Promise.allSettled(BEACHES.map(fetchBeachData));
+    const fresh=settled.filter(r=>r.status==='fulfilled').map(r=>r.value);
+    if(!fresh.length) throw new Error('No fresh forecasts were available');
+    let raw=fresh;
+    if(fresh.length<BEACHES.length && cached){
+      const freshIds=new Set(fresh.map(x=>x.beachId));
+      raw=fresh.concat(cached.raw.filter(x=>!freshIds.has(x.beachId)));
+    }
+    renderForecasts(forecastsFromRaw(raw));
+    if(fresh.length===BEACHES.length){
+      const savedAt=writeForecastCache(fresh);
+      setForecastStatus(savedAt?'Updated just now · cached for 4h':'Updated just now');
+    }else{
+      setForecastStatus('Updated available beaches · some cached data retained');
+    }
   }catch(e){
-    document.getElementById('content').innerHTML =
-      '<div class="err"><b>Could not load forecast.</b><br>'+e.message+'<br>Check your internet connection and that the page is served over http(s) or opened as a local file in a browser that allows API calls.</div>';
+    if(cached){
+      renderForecasts(forecastsFromRaw(cached.raw));
+      setForecastStatus('Refresh failed · showing cache from '+ageLabel(cached.savedAt));
+    }else{
+      document.getElementById('content').innerHTML='<div class="err"><b>Could not load forecast.</b><br>'+e.message+'<br>Check your internet connection and try again.</div>';
+      setForecastStatus('Forecast unavailable');
+    }
+  }finally{ setRefreshing(false); }
+}
+async function load(force){
+  const cached=readForecastCache();
+  if(!force && cached && Date.now()-cached.savedAt<CACHE_TTL_MS){
+    try{
+      renderForecasts(forecastsFromRaw(cached.raw));
+      setForecastStatus('Cached forecast · updated '+ageLabel(cached.savedAt));
+      return;
+    }catch(e){}
   }
+  await refreshForecasts(cached);
 }
 
 let forecastState=[];
@@ -537,7 +616,36 @@ function fmtCalendarDate(iso){
 function fact(k,v){ return '<div class="fact"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
 function condition(k,v){ return '<div class="condition"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
 
-load();
+function setupRefreshControls(){
+  const pull=document.getElementById('pull-refresh');
+  let startY=null, distance=0;
+  document.getElementById('refresh-button').addEventListener('click',()=>load(true));
+  document.addEventListener('touchstart',e=>{
+    if(window.scrollY<=0 && !document.getElementById('refresh-button').disabled){
+      startY=e.touches[0].clientY; distance=0;
+    }
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(startY==null) return;
+    distance=Math.max(0,e.touches[0].clientY-startY);
+    if(distance>12){
+      pull.classList.add('visible');
+      const ready=distance>=72;
+      pull.classList.toggle('ready',ready);
+      pull.textContent=ready?'Release to refresh':'↓ Pull to refresh';
+    }
+  },{passive:true});
+  document.addEventListener('touchend',()=>{
+    if(startY==null) return;
+    const refresh=distance>=72;
+    startY=null; distance=0;
+    if(refresh) load(true);
+    else{ pull.classList.remove('visible','ready'); pull.textContent='↓ Pull to refresh'; }
+  },{passive:true});
+}
+
+setupRefreshControls();
+load(false);
 </script>
 </body>
 </html>
