@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Dean Baker nested D monogram</title>
+  <rect width="512" height="512" rx="104" fill="#171717"/>
+
+  <!-- An open outer D keeps the silhouette distinctive at favicon scale. -->
+  <path
+    d="M84 104h178c112 0 190 62 190 152s-78 152-190 152H146v-58h116c75 0 128-38 128-94s-53-94-128-94H84v-58Z"
+    fill="#f7f2e8"/>
+
+  <!-- The nested lowercase b makes the mark personal without paired upright stems. -->
+  <path
+    fill="#f7f2e8"
+    fill-rule="evenodd"
+    d="M146 176h58v52h50c70 0 112 35 112 88s-42 88-112 88H146V176Zm58 106v68h48c36 0 56-12 56-34s-20-34-56-34h-48Z"/>
+
+  <!-- The warm pixel nods to technology and remains visible at 16px. -->
+  <rect x="228" y="292" width="48" height="48" rx="4" fill="#e06c47"/>
+</svg>
