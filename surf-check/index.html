@@ -216,13 +216,19 @@ async function load(){
         if(!best || sc>best.score) best={hour:h, score:sc};
       }
       if(!best) best={hour:d.hours[Math.floor(d.hours.length/2)], score:scoreHour(d.hours[Math.floor(d.hours.length/2)])};
-      const v = verdict(best.score);
+      // usable session windows: contiguous non-SKIP hours, GO if any hour is GO;
+      // keep the 3 longest/best, display in time order
+      const windows = findWindows(d.hours, srH, ssH)
+        .sort((a,b)=> b.hours.length-a.hours.length || b.score-a.score).slice(0,3)
+        .sort((a,b)=> a.start < b.start ? -1 : 1);
+      const score = windows.length ? windows[0].score : best.score;
+      const v = windows.length ? windows[0].v : verdict(best.score);
       const ws = windState(best.hour.windDir);
       const reasons = [waveNote(best.hour.wave), windNote(best.hour.wind, ws)];
       if(best.hour.sst!=null) reasons.push('water '+best.hour.sst.toFixed(1)+'°C, '+
         (best.hour.sst<15 ? '4/3 wetsuit + boots' : best.hour.sst<18 ? '3/2 wetsuit' : 'spring suit or boardies'));
       const tides = tidesByDay[date] || [];
-      return {date, v, score:best.score, best, reasons, tides, sunrise, sunset};
+      return {date, v, score, best, windows, reasons, tides, sunrise, sunset};
     });
 
     render(summaries, dayList, extrema);
@@ -243,10 +249,9 @@ function render(summaries, dayList, extrema){
   let nextTide = null;
   for(const e of extrema){ if(new Date(e.time)>now){ nextTide=e; break; } }
 
-  const todayPassed = new Date(today.best.hour.time) < now;
   let hero = '<div class="hero"><div class="top"><span class="chip '+today.v.cls+'">'+today.v.label+'</span>'+
     '<div><div class="title">Today, '+fmtDate(today.date)+'</div>'+
-    '<div class="sub">Best window: '+fmtWindow(today.best.hour.time)+(todayPassed?' (already passed)':'')+' &nbsp;•&nbsp; rating '+today.score.toFixed(1)+'/10</div></div></div>'+
+    '<div class="sub">Windows: '+fmtWindows(today.windows, true)+' &nbsp;•&nbsp; rating '+today.score.toFixed(1)+'/10</div></div></div>'+
     '<div class="facts">'+
       fact('Wave height', (today.best.hour.wave!=null? today.best.hour.wave.toFixed(1)+' m' : 'n/a'))+
       fact('Swell', (today.best.hour.swell!=null? today.best.hour.swell.toFixed(1)+' m @ '+Math.round(today.best.hour.swellPer)+'s' : 'n/a'))+
@@ -264,7 +269,7 @@ function render(summaries, dayList, extrema){
       '<div class="ddate">'+fmtDate(s.date)+'</div>'+
       '<div><span class="dchip '+s.v.cls+'">'+s.v.label+'</span></div>'+
       '<div class="dmeta">'+
-        '<b>'+Math.round(s.score*10)/10+'/10</b> &nbsp; best around <b>'+fmtWindow(s.best.hour.time)+'</b><br>'+
+        '<b>'+Math.round(s.score*10)/10+'/10</b> &nbsp; '+fmtWindows(s.windows)+'<br>'+
         'Wave: <b>'+(s.best.hour.wave!=null? s.best.hour.wave.toFixed(1)+' m' : 'n/a')+'</b> &nbsp; Wind: <b>'+(s.best.hour.wind!=null? Math.round(s.best.hour.wind)+' km/h' : 'n/a')+'</b><br>'+
         'Tides: <b>'+tides+'</b><br>'+
         s.reasons[0]+'. '+(s.best.hour.wind!=null? s.reasons[1]+'.' : '')
@@ -280,11 +285,37 @@ function render(summaries, dayList, extrema){
     '<li><b>OK</b> (4.5-7): surfable but with a catch (bigger, windier, or choppier).</li>'+
     '<li><b>SKIP</b> (&lt;4.5): flat, stormy, or too big. Pick another day.</li>'+
     '<li>Beginner sweet spot: 0.5-1.3 m waves, light to moderate offshore or cross-shore wind, mid-tide. Long-period swell (15s+) is more powerful for its size.</li>'+
+    '<li>Each day shows up to 3 session windows (the longest, best ones), in time order; "GO" means that whole stretch is fine to surf, "(passed)" means it is already over.</li>'+
     '<li>Tide times are computed from Open-Meteo sea-level data and are approximate (within about an hour).</li>'+
     '</ul></div>';
 }
 
 function fmtWindow(iso){ const d=new Date(iso); const h=d.getHours(); return h+':00 – '+(h+1)+':00'; }
+function hourLabel(d){ let h=d.getHours(); const ap=h>=12?'pm':'am'; let h12=h%12; if(h12===0)h12=12; return h12+ap; }
+function fmtWindows(wins, markPassed){
+  if(!wins.length) return 'no good windows';
+  const now = markPassed ? new Date() : null;
+  return wins.map(w=>{
+    const start = hourLabel(new Date(w.start));
+    const end = hourLabel(new Date(w.end));
+    const range = start===end ? start : start+'–'+end;
+    const passed = now && new Date(w.end) < now;
+    return w.v.label+' '+range + (passed?' (passed)':'');
+  }).join(', ');
+}
+function findWindows(hours, srH, ssH){
+  const runs=[]; let cur=null;
+  for(const h of hours){
+    const hh=new Date(h.time).getHours();
+    if(hh<srH+1 || hh>ssH) continue;
+    const sc=scoreHour(h);
+    const v=verdict(sc);
+    if(v.label==='SKIP'){ cur=null; continue; }
+    if(cur){ cur.hours.push(h); cur.end=h.time; if(sc>cur.score) cur.score=sc; if(v.label==='GO') cur.v=v; }
+    else { cur={v:v, start:h.time, end:h.time, score:sc, hours:[h]}; runs.push(cur); }
+  }
+  return runs;
+}
 function fmtDate(iso, short){
   const d=new Date(iso+'T12:00:00');
   if(short) return d.toLocaleDateString([], {weekday:'short'});
