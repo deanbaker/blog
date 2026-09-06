@@ -1,0 +1,12 @@
+{% assign items = site.data.scratchpad %}
+{% if include.limit %}{% assign items = items | slice: 0, include.limit %}{% endif %}
+
+{% if items != nil and items != empty %}
+  <div class="pad-grid">
+    {% for item in items %}
+      {% include scratchpad-card.html item=item %}
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="pad-grid__empty">Nothing on the pad right now. Check back soon.</p>
+{% endif %}

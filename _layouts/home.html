@@ -1,0 +1,113 @@
+---
+layout: default
+---
+
+{% comment %}
+  Overrides the theme's home layout. The landing page is no longer a paginated
+  list of posts: it leads with an intro, then the Scratch Pad, then writing.
+  Copy edits live in the front matter of index.html, not in here.
+{% endcomment %}
+
+<div id="main" role="main" class="landing">
+
+  <section class="landing__intro">
+    {% if site.author.avatar %}
+      <img class="landing__avatar"
+           src="{{ site.author.avatar | relative_url }}"
+           alt="{{ site.author.name }}">
+    {% endif %}
+
+    <div class="landing__intro-body">
+      <h1 class="landing__name">{{ page.heading | default: site.author.name }}</h1>
+
+      {% if page.tagline %}
+        <p class="landing__tagline">{{ page.tagline }}</p>
+      {% endif %}
+
+      {% if page.intro %}
+        <div class="landing__blurb">{{ page.intro | markdownify }}</div>
+      {% endif %}
+
+      {% if site.author.links %}
+        <ul class="landing__links">
+          {% for link in site.author.links %}
+            {% if link.url %}
+              <li>
+                <a href="{{ link.url }}" rel="me noopener">
+                  {% if link.icon %}<i class="{{ link.icon }}" aria-hidden="true"></i> {% endif %}{{ link.label }}
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+          <li><a href="{{ '/about/' | relative_url }}"><i class="fas fa-fw fa-user" aria-hidden="true"></i> About</a></li>
+        </ul>
+      {% endif %}
+    </div>
+  </section>
+
+  {% capture page_body %}{{ content | strip }}{% endcapture %}
+  {% if page_body != "" %}
+    <section class="landing__section landing__custom">
+      {{ page_body }}
+    </section>
+  {% endif %}
+
+  <section class="landing__section" id="scratch-pad">
+    <header class="landing__section-head">
+      <div>
+        <p class="landing__eyebrow">Built with AI</p>
+        <h2 class="landing__section-title">The Scratch Pad</h2>
+      </div>
+      <a class="landing__more" href="{{ '/scratch-pad/' | relative_url }}">
+        See everything <span aria-hidden="true">&rarr;</span>
+      </a>
+    </header>
+
+    <p class="landing__section-lede">
+      {{ page.scratchpad_lede | default: "Small tools, one-pagers and half-finished ideas I build with AI in the gaps between other things. Most are useful to about three people. Some are only useful to me." }}
+    </p>
+
+    {% include scratchpad-grid.html limit=page.scratchpad_limit %}
+  </section>
+
+  {% assign visible_posts = site.posts | where_exp: "post", "post.hidden != true" %}
+  {% assign post_limit = page.posts_limit | default: 5 %}
+
+  {% if visible_posts.size > 0 %}
+    <section class="landing__section" id="writing">
+      <header class="landing__section-head">
+        <div>
+          <p class="landing__eyebrow">Notes &amp; talks</p>
+          <h2 class="landing__section-title">Writing</h2>
+        </div>
+        <a class="landing__more" href="{{ '/posts/' | relative_url }}">
+          All posts <span aria-hidden="true">&rarr;</span>
+        </a>
+      </header>
+
+      <ol class="post-rail">
+        {% for post in visible_posts limit: post_limit %}
+          {% assign is_external = false %}
+          {% if post.link %}{% assign is_external = true %}{% endif %}
+          <li class="post-rail__item">
+            <p class="post-rail__meta">
+              <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%b %Y" }}</time>
+              {% for category in post.categories %}
+                <span class="post-rail__cat">{{ category }}</span>
+              {% endfor %}
+            </p>
+            <h3 class="post-rail__title">
+              <a href="{% if is_external %}{{ post.link }}{% else %}{{ post.url | relative_url }}{% endif %}"{% if is_external %} rel="noopener"{% endif %}>
+                {{ post.title | markdownify | remove: "<p>" | remove: "</p>" }}{% if is_external %} <i class="fas fa-external-link-alt post-rail__ext" aria-hidden="true"></i>{% endif %}
+              </a>
+            </h3>
+            {% if post.excerpt %}
+              <p class="post-rail__excerpt">{{ post.excerpt | markdownify | strip_html | strip | truncate: 160 }}</p>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+  {% endif %}
+
+</div>
