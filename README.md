@@ -18,6 +18,36 @@ Replace sample content with your own and [configure as necessary](https://mmista
 
 ---
 
+## The Scratch Pad
+
+The landing page (`index.html` + `_layouts/home.html`) leads with an intro, then
+the Scratch Pad, then recent writing. It is no longer a paginated post list.
+
+To add something to the Scratch Pad, add an entry to the top of
+[`_data/scratchpad.yml`](_data/scratchpad.yml) — no template changes needed:
+
+```yaml
+- title: "Thing I Made"
+  url: /thing/                       # internal path or full external URL
+  blurb: "What it does, in a sentence."
+  status: prototype                  # live | prototype | experiment | archived
+  date: 2026-09
+  stack:
+    - Claude
+  source: https://github.com/deanbaker/blog   # optional
+  writeup: /blog/thing/                       # optional
+```
+
+Entries render on both the landing page (first
+`scratchpad_limit` of them, set in `index.html` front matter) and the full
+[`/scratch-pad/`](_pages/scratch-pad.md) page.
+
+Copy for the intro, tagline and section lede lives in the front matter of
+`index.html`, so wording changes don't need a template edit.
+
+
+---
+
 ## Troubleshooting
 
 If you have a question about using Jekyll, start a discussion on the [Jekyll Forum](https://talk.jekyllrb.com/) or [StackOverflow](https://stackoverflow.com/questions/tagged/jekyll). Other resources:
