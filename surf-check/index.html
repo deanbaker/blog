@@ -66,6 +66,9 @@
 
   footer{color:var(--dim); font-size:.75rem; line-height:1.6; margin-top:30px;}
   a{color:var(--accent);}
+  .back-link{display:inline-block; color:var(--dim); font-size:.75rem; font-weight:700; letter-spacing:.03em; text-decoration:none; margin-bottom:12px;}
+  .back-link:hover,.back-link:focus-visible{color:var(--accent); outline:none;}
+  footer .back-link{margin:14px 0 0;}
   .err{background:#3a1d1d; border:1px solid #7a2e2e; color:#ffc9c9; padding:16px; border-radius:12px; margin-top:16px; line-height:1.6;}
   .loading{color:var(--dim); margin-top:20px; font-size:.9rem;}
   .compare-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
@@ -98,6 +101,7 @@
 <body>
 <div class="wrap">
   <header>
+    <a class="back-link" href="/scratch-pad/">&larr; Back to the Scratch Pad</a>
     <h1>🏄 Beginner Surf Check</h1>
     <p>Anglesea + Torquay, VIC &nbsp;•&nbsp; compare plain-English conditions at four beginner beaches</p>
     <div class="updated-row"><div id="updated"></div><button id="refresh-button" type="button">Refresh</button></div>
@@ -111,6 +115,7 @@
 
   <footer>
     <p>Data: Open-Meteo Marine + Weather APIs (free, no key, called directly from your browser). Wave height is the open-water model estimate; breaking waves at the beach will differ. This is a planning aid, not a safety service: always check the surf live, heed signs and lifeguards, and know your limits.</p>
+    <a class="back-link" href="/">&larr; dean-baker.com</a>
   </footer>
 </div>
 
