@@ -2,6 +2,11 @@
 {% assign status = item.status | default: "experiment" %}
 {% assign external = false %}
 {% if item.url contains "://" %}{% assign external = true %}{% endif %}
+{% if external %}
+  {% assign href = item.url %}
+{% else %}
+  {% assign href = item.url | relative_url %}
+{% endif %}
 
 <article class="pad-card">
   <div class="pad-card__head">
@@ -10,7 +15,11 @@
   </div>
 
   <h3 class="pad-card__title">
-    <a href="{% if external %}{{ item.url }}{% else %}{{ item.url | relative_url }}{% endif %}"{% if external %} rel="noopener"{% endif %}>
+    {% comment %}
+      This anchor is stretched over the whole card (see .pad-card__title a::after),
+      so anywhere on the card is a click target. Secondary links below sit above it.
+    {% endcomment %}
+    <a href="{{ href }}"{% if external %} rel="noopener"{% endif %}>
       {{ item.title }}{% if external %} <i class="fas fa-external-link-alt pad-card__ext" aria-hidden="true"></i>{% endif %}
     </a>
   </h3>
@@ -23,10 +32,12 @@
     </ul>
   {% endif %}
 
-  {% if item.source or item.writeup %}
-    <p class="pad-card__links">
-      {% if item.source %}<a href="{{ item.source }}" rel="noopener"><i class="fas fa-code" aria-hidden="true"></i> Code</a>{% endif %}
-      {% if item.writeup %}<a href="{{ item.writeup | relative_url }}"><i class="fas fa-pen-nib" aria-hidden="true"></i> Write-up</a>{% endif %}
-    </p>
-  {% endif %}
+  <p class="pad-card__links">
+    <a class="pad-card__go" href="{{ href }}"{% if external %} rel="noopener"{% endif %}>
+      {{ item.cta | default: "Open" }} <span aria-hidden="true">&rarr;</span>
+      <span class="sr-only">{{ item.title }}</span>
+    </a>
+    {% if item.source %}<a href="{{ item.source }}" rel="noopener"><i class="fas fa-code" aria-hidden="true"></i> Code</a>{% endif %}
+    {% if item.writeup %}<a href="{{ item.writeup | relative_url }}"><i class="fas fa-pen-nib" aria-hidden="true"></i> Write-up</a>{% endif %}
+  </p>
 </article>

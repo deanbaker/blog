@@ -192,6 +192,7 @@ search: false
 }
 
 .pad-card {
+  position: relative; /* anchor for the stretched title link */
   display: flex;
   flex-direction: column;
   padding: 1.15em 1.25em 1.25em;
@@ -203,6 +204,20 @@ search: false
   &:hover {
     border-color: $primary-color;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Whole card follows the title link. */
+  &:hover h3.pad-card__title a,
+  &:focus-within h3.pad-card__title a {
+    color: $primary-color;
+  }
+
+  &:hover .pad-card__go {
+    text-decoration: underline;
+
+    span[aria-hidden] {
+      padding-left: 0.2em;
+    }
   }
 }
 
@@ -259,6 +274,17 @@ search: false
     text-decoration: none;
     color: $text-color;
 
+    /* Stretch the click target over the entire card. */
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      border-radius: $border-radius;
+    }
+
     &:hover,
     &:focus {
       color: $primary-color;
@@ -305,20 +331,36 @@ search: false
 .pad-card p.pad-card__links {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 1em;
   margin: auto 0 0;
   padding-top: 0.25em;
-  font-size: $type-size-7;
-  font-weight: 700;
+  /* Sized once here; children use relative weights, not nested font-sizes,
+     so em values don't compound and shrink the primary action. */
+  font-size: $type-size-6;
+  font-weight: 400;
   line-height: 1.5;
 
   a {
+    /* Lift the secondary links above the stretched title link. */
+    position: relative;
+    z-index: 1;
     text-decoration: none;
 
     &:hover,
     &:focus {
       text-decoration: underline;
     }
+  }
+}
+
+.pad-card__go {
+  font-weight: 700;
+
+  /* Left inline (not inline-block) so the hover underline runs through
+     the arrow too; padding-left still animates on an inline box. */
+  span[aria-hidden] {
+    transition: $global-transition;
   }
 }
 
