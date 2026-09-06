@@ -72,3 +72,20 @@
     - Beacon Lighting API
     - Vanilla JS
   source: https://github.com/deanbaker/lighting-lookbooks
+
+- title: "Teleprompter"
+  url: https://github.com/deanbaker/tele-prompter
+  cta: "See the code"
+  blurb: >-
+    Films you on your phone while the script scrolls over the live camera
+    preview, so your eyes stay on the lens instead of darting off to read.
+    The recording comes out clean — the text is only ever on the screen,
+    never burned into the file. Installs as a PWA, no backend, no accounts.
+  status: prototype
+  date: 2026-06
+  stack:
+    - Claude
+    - Vite
+    - TypeScript
+    - MediaRecorder API
+    - Cloudflare Workers
