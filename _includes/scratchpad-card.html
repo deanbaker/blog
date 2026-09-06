@@ -1,0 +1,32 @@
+{% assign item = include.item %}
+{% assign status = item.status | default: "experiment" %}
+{% assign external = false %}
+{% if item.url contains "://" %}{% assign external = true %}{% endif %}
+
+<article class="pad-card">
+  <div class="pad-card__head">
+    <span class="pad-card__status pad-card__status--{{ status | slugify }}">{{ status }}</span>
+    {% if item.date %}<span class="pad-card__date">{{ item.date | append: "-01" | date: "%b %Y" }}</span>{% endif %}
+  </div>
+
+  <h3 class="pad-card__title">
+    <a href="{% if external %}{{ item.url }}{% else %}{{ item.url | relative_url }}{% endif %}"{% if external %} rel="noopener"{% endif %}>
+      {{ item.title }}{% if external %} <i class="fas fa-external-link-alt pad-card__ext" aria-hidden="true"></i>{% endif %}
+    </a>
+  </h3>
+
+  <p class="pad-card__blurb">{{ item.blurb }}</p>
+
+  {% if item.stack %}
+    <ul class="pad-card__stack">
+      {% for tool in item.stack %}<li>{{ tool }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if item.source or item.writeup %}
+    <p class="pad-card__links">
+      {% if item.source %}<a href="{{ item.source }}" rel="noopener"><i class="fas fa-code" aria-hidden="true"></i> Code</a>{% endif %}
+      {% if item.writeup %}<a href="{{ item.writeup | relative_url }}"><i class="fas fa-pen-nib" aria-hidden="true"></i> Write-up</a>{% endif %}
+    </p>
+  {% endif %}
+</article>
