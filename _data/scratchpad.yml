@@ -54,3 +54,21 @@
     - Claude
     - GitHub Pages
   writeup: /reference/the-second-arrow/
+
+- title: "Lighting Look Books"
+  url: https://deanbaker.github.io/lighting-lookbooks/
+  cta: "Browse the catalogue"
+  blurb: >-
+    Builder look books hand you a lighting "allowance" with no way to tell what
+    anything actually costs. This pulls six of them apart into 368 unique SKUs,
+    matches each one against Beacon Lighting's live catalogue, and puts the two
+    prices side by side — with the original page scans to check it against.
+  status: live
+  date: 2026-07
+  stack:
+    - Claude
+    - Node.js
+    - Playwright
+    - Beacon Lighting API
+    - Vanilla JS
+  source: https://github.com/deanbaker/lighting-lookbooks
