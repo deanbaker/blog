@@ -1,4 +1,6 @@
 main:
+  - title: "Scratch Pad"
+    url: /scratch-pad/
   - title: "Posts"
     url: /posts/
   - title: "Categories"

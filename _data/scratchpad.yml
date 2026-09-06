@@ -1,0 +1,52 @@
+# The Scratch Pad
+# ---------------
+# Small things built with (and alongside) AI. Newest first.
+#
+# Fields:
+#   title    required. Name of the thing.
+#   url      required. Internal path (/surf-check/) or full external URL.
+#   blurb    required. One or two sentences. What it does and why it exists.
+#   status   optional. live | prototype | experiment | archived  (default: experiment)
+#   date     optional. YYYY-MM or YYYY-MM-DD. Shown as the "built" date.
+#   stack    optional. List of tools/APIs. Rendered as tags.
+#   source   optional. Link to the code.
+#   writeup  optional. Link to a post that goes deeper.
+#
+# To add a new one, copy the block below and drop it at the top of the list.
+#
+# - title: "Thing I Made"
+#   url: /thing/
+#   blurb: "What it does, in a sentence."
+#   status: prototype
+#   date: 2026-09
+#   stack:
+#     - Claude
+#   source: https://github.com/deanbaker/blog
+#   writeup: /blog/thing/
+
+- title: "Beginner Surf Check"
+  url: /surf-check/
+  blurb: >-
+    A go/no-go call for a beginner surfer on the Surf Coast. It scores the next
+    week across Point Roadknight, Anglesea, Cosy Corner and Torquay Surf Beach,
+    then picks the actual time windows worth paddling out in.
+  status: live
+  date: 2026-09
+  stack:
+    - Claude
+    - Open-Meteo Marine API
+    - Vanilla JS
+  source: https://github.com/deanbaker/blog/tree/master/surf-check
+
+- title: "The Second Arrow"
+  url: https://deanbaker.github.io/second-arrow/
+  blurb: >-
+    A designed one-pager on emotional non-reactivity, drafted with AI and
+    reviewed line by line. An experiment in using AI for the first draft of
+    something I actually wanted to keep.
+  status: live
+  date: 2026-08
+  stack:
+    - Claude
+    - GitHub Pages
+  writeup: /reference/the-second-arrow/
