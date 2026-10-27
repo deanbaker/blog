@@ -26,6 +26,23 @@
 #   source: https://github.com/deanbaker/blog
 #   writeup: /blog/thing/
 
+- title: "Quarter Past"
+  url: /workouts/
+  cta: "Get moving"
+  blurb: >-
+    A five-minute bodyweight move or stretch at quarter past every working
+    hour. Install it to your phone's Home Screen and it nudges you with a push
+    notification, rotates through squats, push-ups, planks and stretches, and
+    keeps the same one for next time if you skip.
+  status: live
+  date: 2026-10
+  stack:
+    - Claude
+    - Vanilla JS
+    - Web Push
+    - Cloudflare Workers
+  source: https://github.com/deanbaker/blog/tree/master/workouts
+
 - title: "Beginner Surf Check"
   url: /surf-check/
   cta: "Check the surf"
