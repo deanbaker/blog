@@ -615,8 +615,10 @@ legend { padding: 0 6px; font-size: 0.85rem; font-weight: 600; color: var(--mute
   background: var(--surface);
   border-top: 1px solid var(--line);
 }
-/* The band already covers the home indicator, so drop the tab bar's own inset. */
-.ios-band .tabs { padding-bottom: 6px; }
+/* The band already covers the home indicator and adds its own height, so keep the bar compact. */
+.ios-band .tabs { padding-top: 0; padding-bottom: 0; }
+.ios-band .tabs button { min-height: 44px; }
+.ios-band .tabs button.active::after { bottom: 4px; }
 .tabs button {
   flex: 1;
   max-width: calc(var(--max) / 3);
