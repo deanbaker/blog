@@ -85,6 +85,16 @@ async function snooze() {
 
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+
+// WebKit bug 301994: Home Screen apps can get a viewport shorter than the screen, with an
+// unreachable band underneath. Detect it rather than assume it, so a fixed iOS needs no change.
+function detectBand() {
+  const portrait = matchMedia("(orientation: portrait)").matches;
+  const band = isIOS && isStandalone && portrait && screen.height - innerHeight > 20;
+  document.documentElement.classList.toggle("ios-band", band);
+}
+detectBand();
+addEventListener("resize", detectBand);
 const pushSupported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 let swReg = null;
 let subscribed = false;
