@@ -482,7 +482,7 @@ document.addEventListener("click", async (e) => {
     view = (go ?? tab).dataset.view ?? go.dataset.go;
     editingId = addingId = null;
     render();
-    scrollTo(0, 0);
+    $("#scroller").scrollTop = 0;
     return;
   }
   const btn = e.target.closest("[data-act]");
