@@ -1,6 +1,6 @@
 {
-  "name": "Quarter Past",
-  "short_name": "Quarter Past",
+  "name": "Rep Snacks",
+  "short_name": "Rep Snacks",
   "description": "A 5-minute workout at quarter past every hour.",
   "start_url": "/workouts/",
   "scope": "/workouts/",

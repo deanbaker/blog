@@ -396,7 +396,7 @@ function hourOptions(selected) {
 function renderPushCard() {
   if (!pushSupported && isIOS && !isStandalone) {
     return `<p>To get reminders on iPhone, add this app to your Home Screen first:</p>
-      <ol class="steps"><li>Tap the <strong>Share</strong> button in Safari</li><li>Choose <strong>Add to Home Screen</strong></li><li>Open Quarter Past from the Home Screen and come back here</li></ol>`;
+      <ol class="steps"><li>Tap the <strong>Share</strong> button in Safari</li><li>Choose <strong>Add to Home Screen</strong></li><li>Open Rep Snacks from the Home Screen and come back here</li></ol>`;
   }
   if (!pushSupported) return `<p class="muted">This browser doesn't support push notifications.</p>`;
   if (Notification.permission === "denied") return `<p>Notifications are blocked. Re-enable them for this app in system settings.</p>`;
@@ -538,7 +538,7 @@ document.addEventListener("click", async (e) => {
     }
     case "export": {
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `quarter-past-${dayKey(Date.now())}.json` });
+      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `rep-snacks-${dayKey(Date.now())}.json` });
       a.click();
       return URL.revokeObjectURL(a.href);
     }
