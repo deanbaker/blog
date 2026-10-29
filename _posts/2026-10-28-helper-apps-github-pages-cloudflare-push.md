@@ -124,7 +124,7 @@ Sending a push properly means signing a VAPID token (an ES256 JWT) and encryptin
 
 ### Locking it down
 
-Because the page is served by GitHub Pages and the API lives on `workers.dev`, every call is cross-origin. The Worker only answers CORS for origins I list:
+Because the page is served by GitHub Pages and the API lives on `workers.dev`, every call is cross-origin. The Worker only answers CORS for origins I list, so other websites can't call it from a visitor's browser:
 
 ```js
 function corsHeaders(request, env) {
@@ -138,7 +138,13 @@ function corsHeaders(request, env) {
 }
 ```
 
-It also only accepts subscription endpoints from the real push services, so it can't be used to make requests to arbitrary URLs. The VAPID private key lives in Worker secrets, never in the repo.
+But CORS is enforced by browsers, not by the Worker. `curl` or a script ignores it completely, and a static site can't hide a password in its JavaScript. So the real limits are on what a direct caller can do:
+
+- **Rate limiting.** Writes are capped at 20 a minute per IP, using Cloudflare's free rate-limiting binding.
+- **Prove the subscription is real.** Before storing a new device, the Worker sends it a "Reminders on ✅" push. A made-up endpoint fails, so every stored record came from a real browser.
+- **A hard cap.** It's an app for me, so there's room for 10 devices and no more. Nobody can fill up KV and burn through the free tier.
+
+None of this exposes anything. There's no endpoint that reads a record back. Changing or deleting a device needs its push endpoint, which only that device knows. The Worker also only accepts endpoints from the real push services, so it can't be used to make requests to arbitrary URLs. The VAPID private key lives in Worker secrets, never in the repo.
 
 ## The pattern
 
