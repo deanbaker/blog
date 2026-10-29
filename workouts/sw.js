@@ -1,4 +1,4 @@
-const CACHE = "qp-v7";
+const CACHE = "qp-v8";
 // Relative to this script, so everything stays under /workouts/.
 const SCOPE = self.registration.scope;
 const SHELL = ["./", "index.html", "styles.css", "app.js", "exercises.js", "manifest.webmanifest", "icons/icon.svg"];

@@ -129,9 +129,9 @@ function lastDoneAt() {
 // The server only knows enough to send the reminder: schedule, timezone, and the next exercise's label.
 async function syncServer(extra = {}) {
   const sub = await getSubscription();
-  if (!sub) return;
+  if (!sub) return null;
   const ex = current();
-  await api("PUT", "/api/sub", {
+  return api("PUT", "/api/sub", {
     subscription: sub.toJSON(),
     prefs: { ...state.prefs, tz: Intl.DateTimeFormat().resolvedOptions().timeZone },
     next: ex ? { name: ex.name, detail: ex.detail } : null,
@@ -151,8 +151,13 @@ async function enablePush() {
   } catch (err) {
     return toast("Subscribe failed: " + err.message);
   }
+  // The server sends a "Reminders on" push to check the subscription before storing it.
+  const res = await syncServer();
+  if (!res?.ok) {
+    await (await getSubscription())?.unsubscribe();
+    return toast("Couldn't turn on reminders: " + (res?.error ?? "network error"));
+  }
   subscribed = true;
-  await syncServer();
   toast("Reminders on");
   render();
 }
