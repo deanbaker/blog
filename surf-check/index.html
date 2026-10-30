@@ -114,7 +114,7 @@
   </div>
 
   <footer>
-    <p>Data: Open-Meteo Marine + Weather APIs (free, no key, called directly from your browser). Wave height is the open-water model estimate; breaking waves at the beach will differ. This is a planning aid, not a safety service: always check the surf live, heed signs and lifeguards, and know your limits.</p>
+    <p>Data: Open-Meteo Marine + Weather APIs (free, no key, called directly from your browser). Surf heights are the open-water model estimate scaled for each beach's shelter; breaking waves at the beach will still differ. This is a planning aid, not a safety service: always check the surf live, heed signs and lifeguards, and know your limits.</p>
     <a class="back-link" href="/">&larr; dean-baker.com</a>
   </footer>
 </div>
@@ -123,14 +123,17 @@
 const TIME_ZONE = 'Australia/Melbourne';
 const CACHE_KEY = 'surf-check-forecast-v1';
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
+// sizeFactor scales the open-water model wave height to the surf that actually reaches the beach.
+// Roadknight sits behind the point: ~1 m offshore is flat there, ~1.6-2.2 m is learner size (Oct 2026 observations).
 const BEACHES = [
-  {id:'roadknight', name:'Point Roadknight', area:'Anglesea', lat:-38.4249, lon:144.1812, onshore:135, cone:50},
-  {id:'anglesea', name:'Anglesea Main Beach', area:'Anglesea', lat:-38.4151, lon:144.1872, onshore:135, cone:50},
-  {id:'cosy-corner', name:'Cosy Corner', area:'Torquay', lat:-38.3370, lon:144.3235, onshore:115, cone:50},
-  {id:'torquay-surf', name:'Torquay Surf Beach', area:'Torquay', lat:-38.3427, lon:144.3195, onshore:135, cone:50}
+  {id:'roadknight', name:'Point Roadknight', area:'Anglesea', lat:-38.4249, lon:144.1812, onshore:135, cone:50, sizeFactor:0.28},
+  {id:'anglesea', name:'Anglesea Main Beach', area:'Anglesea', lat:-38.4151, lon:144.1872, onshore:135, cone:50, sizeFactor:1},
+  {id:'cosy-corner', name:'Cosy Corner', area:'Torquay', lat:-38.3370, lon:144.3235, onshore:115, cone:50, sizeFactor:1},
+  {id:'torquay-surf', name:'Torquay Surf Beach', area:'Torquay', lat:-38.3427, lon:144.3195, onshore:135, cone:50, sizeFactor:1}
 ].map(b=>({...b, offshore:(b.onshore+180)%360}));
 
 function angDiff(a,b){ let d=Math.abs(a-b)%360; return d>180?360-d:d; }
+function surfHeight(hour){ return hour.wave==null ? null : hour.wave*(hour.beach.sizeFactor||1); }
 function windState(dir, beach){
   if(dir==null) return {kind:'unknown', score:5};
   if(angDiff(dir, beach.offshore) <= beach.cone) return {kind:'offshore', score:10};
@@ -180,13 +183,14 @@ function windNote(s, ws){
   return 'light '+dir+' wind '+Math.round(s)+' km/h, clean';
 }
 function scoreHour(hour){
-  let s = 0.50*waveScore(hour.wave)
+  const surf = surfHeight(hour);
+  let s = 0.50*waveScore(surf)
         + 0.25*windSpeedScore(hour.wind)
         + 0.25*windState(hour.windDir, hour.beach).score
         + gustPenalty(hour.gust);
   // wave size dominates for a beginner: big waves can never be GO
-  if(hour.wave!=null && hour.wave>2.0) s = Math.min(s, 4.4);   // max OK-ish, usually SKIP
-  if(hour.wave!=null && hour.wave>1.3) s = Math.min(s, 6.9);   // max OK
+  if(surf!=null && surf>2.0) s = Math.min(s, 4.4);   // always SKIP
+  if(surf!=null && surf>1.3) s = Math.min(s, 6.9);   // max OK
   return Math.max(0, Math.min(10, s));
 }
 function verdict(score){
@@ -224,7 +228,7 @@ function daylightBounds(sunrise, sunset){
   };
 }
 function reasonsFor(hour){
-  const reasons = [waveNote(hour.wave), windNote(hour.wind, windState(hour.windDir, hour.beach))];
+  const reasons = [waveNote(surfHeight(hour)), windNote(hour.wind, windState(hour.windDir, hour.beach))];
   if(hour.sst!=null) reasons.push('water '+hour.sst.toFixed(1)+'°C, '+
     (hour.sst<15 ? '4/3 wetsuit + boots' : hour.sst<18 ? '3/2 wetsuit' : 'spring suit or boardies'));
   return reasons;
@@ -443,7 +447,7 @@ function renderApp(forecasts, selectedId){
       (i===0&&feature?'<div class="pick">Best pick</div>':'')+'<div class="beach-card-head"><div><div class="beach-card-name">'+f.beach.name+'</div><div class="beach-card-area">'+f.beach.area+(when?' · '+when:'')+'</div></div>'+
       '<span class="chip '+v.cls+'">'+v.label+'</span></div>'+
       (feature?'<div class="beach-card-windows">'+windowPills(feature.windows,nowIso)+'</div><div class="beach-card-meta">'+
-        feature.best.hour.wave.toFixed(1)+' m waves · '+Math.round(feature.best.hour.wind)+' km/h wind</div>':'<div class="unavailable">No suitable daylight session in the forecast.</div>')+
+        surfHeight(feature.best.hour).toFixed(1)+' m surf · '+Math.round(feature.best.hour.wind)+' km/h wind</div>':'<div class="unavailable">No suitable daylight session in the forecast.</div>')+
       '</button>';
   });
   forecasts.filter(f=>f.error).forEach(f=>{
@@ -485,7 +489,8 @@ function renderDetail(forecast){
       '<div><span class="chip '+featured.v.cls+'">'+featured.v.label+'</span> '+
       '<span class="rating">'+featured.score.toFixed(1)+'<span>/10</span></span></div></div>'+
       '<div class="facts">'+
-      fact('Wave height', (featured.best.hour.wave!=null? featured.best.hour.wave.toFixed(1)+' m' : 'n/a'))+
+      fact('Surf (est.)', (featured.best.hour.wave!=null? surfHeight(featured.best.hour).toFixed(1)+' m' : 'n/a'))+
+      fact('Open water', (featured.best.hour.wave!=null? featured.best.hour.wave.toFixed(1)+' m' : 'n/a'))+
       fact('Swell', (featured.best.hour.swell!=null && featured.best.hour.swellPer!=null ? featured.best.hour.swell.toFixed(1)+' m @ '+Math.round(featured.best.hour.swellPer)+'s' : 'n/a'))+
       fact('Wind', (featured.best.hour.wind!=null? Math.round(featured.best.hour.wind)+' km/h' : 'n/a'))+
       fact('Water', (featured.best.hour.sst!=null? featured.best.hour.sst.toFixed(1)+' °C' : 'n/a'))+
@@ -509,7 +514,7 @@ function renderDetail(forecast){
       '<span class="chip '+cardV.cls+'">'+cardV.label+'</span></div>'+
       '<div class="day-score"><strong>'+s.score.toFixed(1)+'/10</strong><span>'+(dayDone?'best conditions earlier':'best conditions')+'</span></div>'+
       '<div class="session-label">Best sessions</div><div class="windows">'+windowPills(s.windows, s.date===todayKey?nowIso:null)+'</div>'+
-      '<div class="conditions">'+condition('Wave', s.best.hour.wave!=null?s.best.hour.wave.toFixed(1)+' m':'n/a')+
+      '<div class="conditions">'+condition('Surf (est.)', s.best.hour.wave!=null?surfHeight(s.best.hour).toFixed(1)+' m':'n/a')+
       condition('Wind', s.best.hour.wind!=null?Math.round(s.best.hour.wind)+' km/h':'n/a')+'</div>'+
       '<div class="tides"><b>Tides</b> &nbsp;'+tides+'</div>'+
       '<div class="day-note">'+s.reasons[0]+'. '+(s.best.hour.wind!=null?s.reasons[1]+'.':'')+'</div></div>';
@@ -522,7 +527,8 @@ function renderDetail(forecast){
     '<li><b>GO</b> (7+): small clean waves, fine for a beginner.</li>'+
     '<li><b>OK</b> (4.5-7): surfable but with a catch (bigger, windier, or choppier).</li>'+
     '<li><b>SKIP</b> (&lt;4.5): flat, stormy, or too big. Pick another day.</li>'+
-    '<li>Beginner sweet spot: 0.5-1.3 m waves, light to moderate offshore or cross-shore wind, mid-tide. Long-period swell (15s+) is more powerful for its size.</li>'+
+    '<li>Surf heights are estimates for each beach: the open-water model wave height scaled for how sheltered the beach is. Point Roadknight sits behind the point and needs roughly 3–4× more open-water swell than an exposed beach.</li>'+
+    '<li>Beginner sweet spot: 0.5-1.3 m surf, light to moderate offshore or cross-shore wind, mid-tide. Long-period swell (15s+) is more powerful for its size.</li>'+
     '<li>Each day highlights its best morning and afternoon 2–3 hour sessions when they are surfable. Every hour in a GO session is rated GO; passed sessions are dimmed.</li>'+
     '<li>Tide times are computed from Open-Meteo sea-level data and are approximate (within about an hour).</li>'+
     '</ul></div>';
