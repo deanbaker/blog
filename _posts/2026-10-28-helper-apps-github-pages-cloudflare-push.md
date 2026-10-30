@@ -68,7 +68,7 @@ So I needed a server. A tiny one.
 
 ## The Worker: a server that barely exists
 
-A [Cloudflare Worker](https://developers.cloudflare.com/workers/) on the free tier does the job. It does exactly two things:
+A [Cloudflare Worker](https://developers.cloudflare.com/workers/) on the free tier does the job ([source](https://github.com/deanbaker/rep-snacks-worker)). It does exactly two things:
 
 1. Stores push subscriptions in Workers KV, via a small `/api/*` endpoint.
 2. Runs a cron every five minutes and sends a push to anyone who's due.
