@@ -166,6 +166,12 @@ function lastDoneAt() {
   return null;
 }
 
+// The Worker only adds a device (or accepts new keys for one) with the enrolment code. It's typed
+// in once per device and kept outside `state`, so it never ends up in an exported backup.
+const ENROL_KEY = "qp:enrol";
+const loadEnrol = () => { try { return localStorage.getItem(ENROL_KEY) ?? ""; } catch { return ""; } };
+const saveEnrol = (code) => { try { localStorage.setItem(ENROL_KEY, code); } catch {} };
+
 // The server only knows enough to send the reminder: schedule, timezone, and the next exercise's label.
 async function syncServer(extra = {}) {
   const sub = await getSubscription();
@@ -176,12 +182,15 @@ async function syncServer(extra = {}) {
     prefs: { ...state.prefs, tz: Intl.DateTimeFormat().resolvedOptions().timeZone },
     next: ex ? { name: ex.name, detail: ex.detail } : null,
     lastDoneAt: lastDoneAt(),
+    enrolCode: loadEnrol(),
     ...extra,
   });
 }
 
 async function enablePush() {
   if (!swReg) return toast("Reminders need the app's service worker, which didn't load");
+  const enrolCode = ($("#enrol-code")?.value ?? "").trim() || loadEnrol();
+  if (!enrolCode) return toast("Enter the enrolment code first");
   const perm = await Notification.requestPermission();
   if (perm !== "granted") return toast("Notifications were not allowed");
   const { publicKey } = (await api("GET", "/api/vapid")) ?? {};
@@ -192,11 +201,12 @@ async function enablePush() {
     return toast("Subscribe failed: " + err.message);
   }
   // The server sends a "Reminders on" push to check the subscription before storing it.
-  const res = await syncServer();
+  const res = await syncServer({ enrolCode });
   if (!res?.ok) {
     await (await getSubscription())?.unsubscribe();
     return toast("Couldn't turn on reminders: " + (res?.error ?? "network error"));
   }
+  saveEnrol(enrolCode);
   subscribed = true;
   toast("Reminders on");
   render();
@@ -445,7 +455,11 @@ function renderPushCard() {
   }
   if (!pushSupported) return `<p class="muted">This browser doesn't support push notifications.</p>`;
   if (Notification.permission === "denied") return `<p>Notifications are blocked. Re-enable them for this app in system settings.</p>`;
-  if (!subscribed) return `<p>Get a notification at quarter past each hour during your working hours.</p><button class="btn primary" data-act="push-on">Turn on reminders</button>`;
+  if (!subscribed) {
+    return `<p>Get a notification at quarter past each hour during your working hours.</p>
+      <label>Enrolment code <input id="enrol-code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${loadEnrol() ? "Saved on this device" : "From the Worker's ENROL_CODE secret"}"></label>
+      <button class="btn primary" data-act="push-on">Turn on reminders</button>`;
+  }
   return `<p>Reminders are <strong>on</strong> for this device.</p>
     <div class="row"><button class="btn" data-act="push-test">Send a test</button><button class="btn" data-act="push-off">Turn off</button></div>`;
 }
