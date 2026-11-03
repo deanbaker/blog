@@ -17,10 +17,50 @@ function defaultState() {
   };
 }
 
+// Imported files are untrusted and their values end up in innerHTML, so rebuild the state
+// field by field with the expected types instead of spreading whatever was in the file.
+const OUTCOMES = ["done", "skipped", "snoozed"];
+const str = (v, max = 500) => (typeof v === "string" ? v.slice(0, max) : "");
+const int = (v, min, max, d) => (Number.isInteger(v) && v >= min && v <= max ? v : d);
+
+function cleanTimer(t) {
+  const work = int(t?.work, 1, 86400, 0);
+  return work ? { work, rest: int(t.rest, 0, 86400, 0), rounds: int(t.rounds, 1, 1000, 1) } : undefined;
+}
+
+function cleanState(data) {
+  const base = defaultState();
+  const exercises = (Array.isArray(data?.exercises) ? data.exercises : [])
+    .filter((e) => e && typeof e === "object" && str(e.id) && str(e.name))
+    .map((e) => {
+      const ex = {
+        id: str(e.id, 100),
+        name: str(e.name),
+        category: CATEGORIES.includes(e.category) ? e.category : "other",
+        detail: str(e.detail),
+        cue: str(e.cue),
+        enabled: e.enabled !== false,
+      };
+      const timer = cleanTimer(e.timer);
+      if (timer) ex.timer = timer;
+      return ex;
+    });
+  const log = (Array.isArray(data?.log) ? data.log : [])
+    .filter((l) => l && Number.isFinite(l.at) && OUTCOMES.includes(l.outcome))
+    .map((l) => ({ id: str(l.id, 100), name: str(l.name), at: l.at, outcome: l.outcome }));
+  const p = data?.prefs ?? {};
+  const prefs = {
+    startHour: int(p.startHour, 0, 24, base.prefs.startHour),
+    endHour: int(p.endHour, 0, 24, base.prefs.endHour),
+    days: Array.isArray(p.days) ? [...new Set(p.days.filter((d) => int(d, 0, 6, -1) >= 0))].sort() : base.prefs.days,
+  };
+  return { exercises, currentId: str(data?.currentId, 100) || exercises[0]?.id || null, log, prefs };
+}
+
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (saved?.exercises) return { ...defaultState(), ...saved };
+    if (Array.isArray(saved?.exercises)) return cleanState(saved);
   } catch {}
   return defaultState();
 }
@@ -126,6 +166,12 @@ function lastDoneAt() {
   return null;
 }
 
+// The Worker only adds a device (or accepts new keys for one) with the enrolment code. It's typed
+// in once per device and kept outside `state`, so it never ends up in an exported backup.
+const ENROL_KEY = "qp:enrol";
+const loadEnrol = () => { try { return localStorage.getItem(ENROL_KEY) ?? ""; } catch { return ""; } };
+const saveEnrol = (code) => { try { localStorage.setItem(ENROL_KEY, code); } catch {} };
+
 // The server only knows enough to send the reminder: schedule, timezone, and the next exercise's label.
 async function syncServer(extra = {}) {
   const sub = await getSubscription();
@@ -136,12 +182,15 @@ async function syncServer(extra = {}) {
     prefs: { ...state.prefs, tz: Intl.DateTimeFormat().resolvedOptions().timeZone },
     next: ex ? { name: ex.name, detail: ex.detail } : null,
     lastDoneAt: lastDoneAt(),
+    enrolCode: loadEnrol(),
     ...extra,
   });
 }
 
 async function enablePush() {
   if (!swReg) return toast("Reminders need the app's service worker, which didn't load");
+  const enrolCode = ($("#enrol-code")?.value ?? "").trim() || loadEnrol();
+  if (!enrolCode) return toast("Enter the enrolment code first");
   const perm = await Notification.requestPermission();
   if (perm !== "granted") return toast("Notifications were not allowed");
   const { publicKey } = (await api("GET", "/api/vapid")) ?? {};
@@ -152,11 +201,12 @@ async function enablePush() {
     return toast("Subscribe failed: " + err.message);
   }
   // The server sends a "Reminders on" push to check the subscription before storing it.
-  const res = await syncServer();
+  const res = await syncServer({ enrolCode });
   if (!res?.ok) {
     await (await getSubscription())?.unsubscribe();
     return toast("Couldn't turn on reminders: " + (res?.error ?? "network error"));
   }
+  saveEnrol(enrolCode);
   subscribed = true;
   toast("Reminders on");
   render();
@@ -373,7 +423,7 @@ function renderHistory() {
     const dk = dayKey(l.at);
     const header = dk !== lastDay ? `<li class="day">${new Date(l.at).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}</li>` : "";
     lastDay = dk;
-    return `${header}<li class="${l.outcome}"><span>${esc(l.name)}</span><span class="muted">${l.outcome} · ${fmtTime(new Date(l.at))}</span></li>`;
+    return `${header}<li class="${esc(l.outcome)}"><span>${esc(l.name)}</span><span class="muted">${esc(l.outcome)} · ${fmtTime(new Date(l.at))}</span></li>`;
   }).join("");
   el.innerHTML = `
     <div class="card">
@@ -405,7 +455,11 @@ function renderPushCard() {
   }
   if (!pushSupported) return `<p class="muted">This browser doesn't support push notifications.</p>`;
   if (Notification.permission === "denied") return `<p>Notifications are blocked. Re-enable them for this app in system settings.</p>`;
-  if (!subscribed) return `<p>Get a notification at quarter past each hour during your working hours.</p><button class="btn primary" data-act="push-on">Turn on reminders</button>`;
+  if (!subscribed) {
+    return `<p>Get a notification at quarter past each hour during your working hours.</p>
+      <label>Enrolment code <input id="enrol-code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${loadEnrol() ? "Saved on this device" : "From the Worker's ENROL_CODE secret"}"></label>
+      <button class="btn primary" data-act="push-on">Turn on reminders</button>`;
+  }
   return `<p>Reminders are <strong>on</strong> for this device.</p>
     <div class="row"><button class="btn" data-act="push-test">Send a test</button><button class="btn" data-act="push-off">Turn off</button></div>`;
 }
@@ -570,8 +624,8 @@ document.addEventListener("change", async (e) => {
   if (t.dataset.act === "import" && t.files[0]) {
     try {
       const data = JSON.parse(await t.files[0].text());
-      if (!Array.isArray(data.exercises)) throw new Error();
-      state = { ...defaultState(), ...data };
+      if (!Array.isArray(data?.exercises)) throw new Error();
+      state = cleanState(data);
       toast("Imported");
       settingsChanged();
     } catch {

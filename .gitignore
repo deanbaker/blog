@@ -2,3 +2,5 @@ _site
 .sass-cache
 .jekyll-metadata
 Gemfile.lock
+# Windows download metadata (alternate data streams copied across by WSL)
+*:Zone.Identifier

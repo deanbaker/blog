@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- GitHub Pages can't send headers, so the CSP goes here. connect-src must list the Worker in app.js's API_BASE. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://daily-workouts.deano-baker.workers.dev; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Rep Snacks</title>
   <meta name="theme-color" content="#0f3d2e">
   <meta name="apple-mobile-web-app-capable" content="yes">

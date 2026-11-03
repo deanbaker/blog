@@ -33,17 +33,21 @@ timezone: Australia/Melbourne
 include:
   - _pages
 
-# Exclude from processing.
-# The following items will not be processed, by default. Create a custom list
-# to override the default setting.
-# exclude:
-#   - Gemfile
-#   - Gemfile.lock
-#   - node_modules
-#   - vendor/bundle/
-#   - vendor/cache/
-#   - vendor/gems/
-#   - vendor/ruby/
+# Exclude from processing. Setting this replaces Jekyll's defaults, so they are
+# repeated here. examples/ holds the theme's sample posts, which would otherwise
+# be published as pages; the rest is repo plumbing that doesn't belong on the site.
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - README.md
+  - Makefile
+  - examples/
+  - "*:Zone.Identifier"
 
 # Plugins (previously gems:)
 plugins:

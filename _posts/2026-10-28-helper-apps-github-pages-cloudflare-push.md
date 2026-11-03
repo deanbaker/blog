@@ -143,6 +143,7 @@ But CORS is enforced by browsers, not by the Worker. `curl` or a script ignores 
 - **Rate limiting.** Writes are capped at 20 a minute per IP, using Cloudflare's free rate-limiting binding.
 - **Prove the subscription is real.** Before storing a new device, the Worker sends it a "Reminders on ✅" push. A made-up endpoint fails, so every stored record came from a real browser.
 - **A hard cap.** It's an app for me, so there's room for 10 devices and no more. Nobody can fill up KV and burn through the free tier.
+- **An enrolment code.** A cap on its own means a stranger could take all 10 slots, because anyone can make a real subscription. So adding a device needs a code that lives in Worker secrets and gets typed into each phone once. It's never in the JavaScript, so there's nothing on the page to find.
 
 None of this exposes anything. There's no endpoint that reads a record back. Changing or deleting a device needs its push endpoint, which only that device knows. The Worker also only accepts endpoints from the real push services, so it can't be used to make requests to arbitrary URLs. The VAPID private key lives in Worker secrets, never in the repo.
 
