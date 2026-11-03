@@ -17,10 +17,50 @@ function defaultState() {
   };
 }
 
+// Imported files are untrusted and their values end up in innerHTML, so rebuild the state
+// field by field with the expected types instead of spreading whatever was in the file.
+const OUTCOMES = ["done", "skipped", "snoozed"];
+const str = (v, max = 500) => (typeof v === "string" ? v.slice(0, max) : "");
+const int = (v, min, max, d) => (Number.isInteger(v) && v >= min && v <= max ? v : d);
+
+function cleanTimer(t) {
+  const work = int(t?.work, 1, 86400, 0);
+  return work ? { work, rest: int(t.rest, 0, 86400, 0), rounds: int(t.rounds, 1, 1000, 1) } : undefined;
+}
+
+function cleanState(data) {
+  const base = defaultState();
+  const exercises = (Array.isArray(data?.exercises) ? data.exercises : [])
+    .filter((e) => e && typeof e === "object" && str(e.id) && str(e.name))
+    .map((e) => {
+      const ex = {
+        id: str(e.id, 100),
+        name: str(e.name),
+        category: CATEGORIES.includes(e.category) ? e.category : "other",
+        detail: str(e.detail),
+        cue: str(e.cue),
+        enabled: e.enabled !== false,
+      };
+      const timer = cleanTimer(e.timer);
+      if (timer) ex.timer = timer;
+      return ex;
+    });
+  const log = (Array.isArray(data?.log) ? data.log : [])
+    .filter((l) => l && Number.isFinite(l.at) && OUTCOMES.includes(l.outcome))
+    .map((l) => ({ id: str(l.id, 100), name: str(l.name), at: l.at, outcome: l.outcome }));
+  const p = data?.prefs ?? {};
+  const prefs = {
+    startHour: int(p.startHour, 0, 24, base.prefs.startHour),
+    endHour: int(p.endHour, 0, 24, base.prefs.endHour),
+    days: Array.isArray(p.days) ? [...new Set(p.days.filter((d) => int(d, 0, 6, -1) >= 0))].sort() : base.prefs.days,
+  };
+  return { exercises, currentId: str(data?.currentId, 100) || exercises[0]?.id || null, log, prefs };
+}
+
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (saved?.exercises) return { ...defaultState(), ...saved };
+    if (Array.isArray(saved?.exercises)) return cleanState(saved);
   } catch {}
   return defaultState();
 }
@@ -373,7 +413,7 @@ function renderHistory() {
     const dk = dayKey(l.at);
     const header = dk !== lastDay ? `<li class="day">${new Date(l.at).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}</li>` : "";
     lastDay = dk;
-    return `${header}<li class="${l.outcome}"><span>${esc(l.name)}</span><span class="muted">${l.outcome} · ${fmtTime(new Date(l.at))}</span></li>`;
+    return `${header}<li class="${esc(l.outcome)}"><span>${esc(l.name)}</span><span class="muted">${esc(l.outcome)} · ${fmtTime(new Date(l.at))}</span></li>`;
   }).join("");
   el.innerHTML = `
     <div class="card">
@@ -570,8 +610,8 @@ document.addEventListener("change", async (e) => {
   if (t.dataset.act === "import" && t.files[0]) {
     try {
       const data = JSON.parse(await t.files[0].text());
-      if (!Array.isArray(data.exercises)) throw new Error();
-      state = { ...defaultState(), ...data };
+      if (!Array.isArray(data?.exercises)) throw new Error();
+      state = cleanState(data);
       toast("Imported");
       settingsChanged();
     } catch {
