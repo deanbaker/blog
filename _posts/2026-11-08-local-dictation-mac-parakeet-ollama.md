@@ -86,3 +86,7 @@ Mostly, and it's worth being precise. Transcription and cleanup both run on the 
 The easy check is to turn off Wi-Fi and dictate something.
 
 It's only a night old, so we'll see how it holds up. Next up is the iPhone, where keyboards aren't allowed to touch the microphone, which sounds like a fun way to lose a weekend.
+
+## Update: a couple of days in
+
+After using the setup for a couple of days, the local cleanup model hasn't added much value at all, really. Plain dictation in Hex was already good, and the extra step on top of it hasn't earned its place so far.
