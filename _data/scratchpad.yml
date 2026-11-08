@@ -26,6 +26,23 @@
 #   source: https://github.com/deanbaker/blog
 #   writeup: /blog/thing/
 
+- title: "Yabber"
+  url: https://github.com/deanbaker/yabber
+  cta: "See the code"
+  blurb: >-
+    A dictation keyboard for iPhone that never sends your voice anywhere. Tap
+    the mic in any app and Parakeet transcribes it on the phone's Neural
+    Engine, usually in under a tenth of a second.
+  status: prototype
+  date: 2026-11
+  stack:
+    - Claude Code
+    - Swift
+    - FluidAudio
+    - Parakeet
+  source: https://github.com/deanbaker/yabber
+  writeup: /blog/local-dictation-iphone-yabber/
+
 - title: "Rep Snacks"
   url: /workouts/
   cta: "Get moving"
