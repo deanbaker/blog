@@ -76,10 +76,6 @@ Probably. Afterwards I found [SpeakUp](https://getspeakup.app/ios/) and [Spokenl
 
 I'm still glad I built my own. It has no recording cap (SpeakUp stops at 60 seconds), nothing depends on someone's free tier lasting, and I can change anything. With a paid developer account the install also lasts a year, not the 7 days a free account gets.
 
-## The name
-
-It started as "WisprFree", which is a terrible name to keep. My first pick, Sotto (from *sotto voce*), turned out to be shared by about 35 apps on the App Store, including a dictation app. So I went Australian: **yabber** is slang for a chat, and no app on the Australian App Store was using it when I checked.
-
 ## App Store?
 
 Not for now. Apple's keyboard rules say keyboards must offer real typing and must work without Full Access, so Yabber would need a full QWERTY layout before review. There's also a privacy policy, licence credits for Parakeet and FluidAudio, and the usual App Store Connect forms. I've written the full list up in the repo in case I get the urge.
