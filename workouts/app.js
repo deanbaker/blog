@@ -73,9 +73,14 @@ function save() {
 
 const enabled = () => state.exercises.filter((e) => e.enabled);
 
+// If the current exercise has been switched off, carry on from the next one that's on, so
+// turning a category off for a while and back on again picks up where you were.
 function current() {
-  const list = enabled();
-  return list.find((e) => e.id === state.currentId) ?? list[0] ?? null;
+  const all = state.exercises;
+  const at = all.findIndex((e) => e.id === state.currentId);
+  if (at < 0) return enabled()[0] ?? null;
+  for (let k = 0; k < all.length; k++) if (all[(at + k) % all.length].enabled) return all[(at + k) % all.length];
+  return null;
 }
 
 function upNext() {
@@ -110,6 +115,17 @@ async function markSkipped() {
   toast("Skipped. Same one next time.");
   render();
   await syncServer({ clearSnooze: true });
+}
+
+// Move on to the next exercise without logging anything (e.g. not up to push-ups today).
+async function swapExercise() {
+  const nxt = upNext();
+  if (!nxt) return;
+  stopTimer();
+  state.currentId = nxt.id;
+  save();
+  render();
+  await syncServer();
 }
 
 async function snooze() {
@@ -376,6 +392,7 @@ function renderNow() {
       <button class="btn primary big" data-act="done">Done</button>
       <div class="row">
         <button class="btn" data-act="skip">Skip this hour</button>
+        ${nxt ? `<button class="btn" data-act="swap">Swap exercise</button>` : ""}
         ${subscribed ? `<button class="btn" data-act="snooze">Snooze 10m</button>` : ""}
       </div>
     </div>
@@ -508,7 +525,11 @@ function renderSettings() {
     </div>
     <div class="card">
       <h3>Exercises</h3>
-      <p class="muted small">They rotate in this order. Tap one to edit it.</p>
+      <p class="muted small">They rotate in this order. Tap one to edit it, or a category to switch all of it off for a while.</p>
+      <div class="cats">${CATEGORIES.filter((c) => state.exercises.some((e) => e.category === c)).map((c) => {
+        const on = state.exercises.some((e) => e.category === c && e.enabled);
+        return `<button class="chip chip-${c}${on ? "" : " off"}" data-act="cat" data-cat="${c}" aria-pressed="${on}">${c}</button>`;
+      }).join("")}</div>
       <ul class="exlist">${state.exercises.map((ex, i) => renderExerciseRow(ex, i, n)).join("")}</ul>
       <button class="btn" data-act="ex-add">+ Add exercise</button>
     </div>
@@ -561,6 +582,14 @@ document.addEventListener("click", async (e) => {
     case "done": return markDone();
     case "skip": return markSkipped();
     case "snooze": return snooze();
+    case "swap": return swapExercise();
+    case "cat": {
+      // Any on → all off; all off → all on.
+      const list = state.exercises.filter((x) => x.category === btn.dataset.cat);
+      const on = !list.some((x) => x.enabled);
+      for (const x of list) x.enabled = on;
+      return settingsChanged();
+    }
     case "timer-start": return startTimer();
     case "timer-pause": return pauseTimer();
     case "timer-reset": timer = null; return startTimer();

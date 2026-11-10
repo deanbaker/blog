@@ -267,6 +267,10 @@ main {
 .chip-stretch { background: var(--chip-stretch-bg); color: var(--chip-stretch-fg); }
 .chip-other   { background: var(--chip-other-bg);   color: var(--chip-other-fg); }
 
+.cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.cats .chip { border: 0; padding: 8px 14px; touch-action: manipulation; }
+.cats .chip.off { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--line); text-decoration: line-through; }
+
 /* ---------- timer ---------- */
 
 .timer {
