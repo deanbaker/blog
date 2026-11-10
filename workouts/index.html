@@ -8,7 +8,8 @@
   <title>Rep Snacks</title>
   <meta name="theme-color" content="#0f3d2e">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Not black-translucent: on iOS 26.1+ that leaves an empty band under the tab bar (WebKit bug 301994). -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Rep Snacks">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">

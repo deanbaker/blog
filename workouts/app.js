@@ -156,11 +156,23 @@ async function snooze() {
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 
+function safeAreaTop() {
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top)";
+  document.body.append(probe);
+  const top = parseFloat(getComputedStyle(probe).paddingTop) || 0;
+  probe.remove();
+  return top;
+}
+
 // WebKit bug 301994: Home Screen apps can get a viewport shorter than the screen, with an
 // unreachable band underneath. Detect it rather than assume it, so a fixed iOS needs no change.
+// Under a translucent status bar the page should fill the screen; under a solid one it loses
+// only the status bar (at most ~62pt), so anything beyond that is the band.
 function detectBand() {
   const portrait = matchMedia("(orientation: portrait)").matches;
-  const band = isIOS && isStandalone && portrait && screen.height - innerHeight > 20;
+  const gap = screen.height - innerHeight;
+  const band = isIOS && isStandalone && portrait && gap > (safeAreaTop() > 0 ? 20 : 70);
   document.documentElement.classList.toggle("ios-band", band);
 }
 detectBand();
