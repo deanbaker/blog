@@ -5,6 +5,7 @@ const API_BASE = "https://daily-workouts.deano-baker.workers.dev";
 const STORE_KEY = "qp:v1";
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const CATEGORIES = ["legs", "push", "core", "stretch", "other"];
+const EASY_CATS = ["stretch", "core"]; // what an "easy day" narrows the rotation to
 
 // ---------- state ----------
 
@@ -14,6 +15,7 @@ function defaultState() {
     currentId: DEFAULT_EXERCISES[0].id,
     log: [], // { id, name, at, outcome: "done" | "skipped" | "snoozed" }
     prefs: { startHour: 9, endHour: 17, days: [1, 2, 3, 4, 5] },
+    easyDay: null, // "YYYY-MM-DD" while an easy day is on; anything else means it's over
   };
 }
 
@@ -54,7 +56,8 @@ function cleanState(data) {
     endHour: int(p.endHour, 0, 24, base.prefs.endHour),
     days: Array.isArray(p.days) ? [...new Set(p.days.filter((d) => int(d, 0, 6, -1) >= 0))].sort() : base.prefs.days,
   };
-  return { exercises, currentId: str(data?.currentId, 100) || exercises[0]?.id || null, log, prefs };
+  const easyDay = /^\d{4}-\d{2}-\d{2}$/.test(data?.easyDay) ? data.easyDay : null;
+  return { exercises, currentId: str(data?.currentId, 100) || exercises[0]?.id || null, log, prefs, easyDay };
 }
 
 function load() {
@@ -71,15 +74,26 @@ function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {}
 }
 
-const enabled = () => state.exercises.filter((e) => e.enabled);
+// An easy day only lasts for the day it was turned on, so it lapses at local midnight.
+const easyDay = () => state.easyDay === dayKey(Date.now());
 
-// If the current exercise has been switched off, carry on from the next one that's on, so
-// turning a category off for a while and back on again picks up where you were.
+// The exercises in rotation right now: the ones switched on, narrowed to stretch and core on an
+// easy day (unless that would leave nothing).
+function enabled() {
+  const on = state.exercises.filter((e) => e.enabled);
+  if (!easyDay()) return on;
+  const easy = on.filter((e) => EASY_CATS.includes(e.category));
+  return easy.length ? easy : on;
+}
+
+// If the current exercise is out of rotation, carry on from the next one that's in, so
+// switching a category off (or an easy day) and back again picks up where you were.
 function current() {
   const all = state.exercises;
+  const list = enabled();
   const at = all.findIndex((e) => e.id === state.currentId);
-  if (at < 0) return enabled()[0] ?? null;
-  for (let k = 0; k < all.length; k++) if (all[(at + k) % all.length].enabled) return all[(at + k) % all.length];
+  if (at < 0) return list[0] ?? null;
+  for (let k = 0; k < all.length; k++) if (list.includes(all[(at + k) % all.length])) return all[(at + k) % all.length];
   return null;
 }
 
@@ -396,6 +410,9 @@ function renderNow() {
         ${subscribed ? `<button class="btn" data-act="snooze">Snooze 10m</button>` : ""}
       </div>
     </div>
+    ${easyDay()
+      ? `<p class="easy center">Easy day: stretch &amp; core only until tomorrow. <button class="link" data-act="easy-off">Back to everything</button></p>`
+      : `<p class="center"><button class="link" data-act="easy-on">Easy day: stretch &amp; core only</button></p>`}
     <div class="today">
       <div><strong>${todayDone}</strong> done today</div>
       <div><strong>${streak()}</strong> day streak</div>
@@ -583,6 +600,15 @@ document.addEventListener("click", async (e) => {
     case "skip": return markSkipped();
     case "snooze": return snooze();
     case "swap": return swapExercise();
+    case "easy-on":
+    case "easy-off": {
+      state.easyDay = btn.dataset.act === "easy-on" ? dayKey(Date.now()) : null;
+      lastEasy = easyDay();
+      stopTimer();
+      save();
+      render();
+      return syncServer();
+    }
     case "cat": {
       // Any on → all off; all off → all on.
       const list = state.exercises.filter((x) => x.category === btn.dataset.cat);
@@ -689,13 +715,26 @@ document.addEventListener("submit", (e) => {
 let reloadPending = false;
 const reloadForUpdate = () => { if (timer?.running) reloadPending = true; else location.reload(); };
 
+// When an easy day lapses at midnight, tell the server so the next reminder names the right exercise.
+let lastEasy = easyDay();
+function checkEasyDay() {
+  if (easyDay() === lastEasy) return;
+  lastEasy = easyDay();
+  syncServer();
+}
+
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
   if (reloadPending) return reloadForUpdate();
   swReg?.update().catch(() => {});
+  checkEasyDay();
   render();
 });
-setInterval(() => { if (document.visibilityState === "visible" && !timer?.running) render(); }, 60_000);
+setInterval(() => {
+  if (document.visibilityState !== "visible" || timer?.running) return;
+  checkEasyDay();
+  render();
+}, 60_000);
 
 // ---------- boot ----------
 
