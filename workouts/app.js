@@ -684,8 +684,16 @@ document.addEventListener("submit", (e) => {
   settingsChanged();
 });
 
+// A Home Screen app on iOS resumes rather than reloads, so check for a new deploy each time it
+// comes back, and reload once the new service worker takes over (unless a timer is running).
+let reloadPending = false;
+const reloadForUpdate = () => { if (timer?.running) reloadPending = true; else location.reload(); };
+
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") render();
+  if (document.visibilityState !== "visible") return;
+  if (reloadPending) return reloadForUpdate();
+  swReg?.update().catch(() => {});
+  render();
 });
 setInterval(() => { if (document.visibilityState === "visible" && !timer?.running) render(); }, 60_000);
 
@@ -693,6 +701,8 @@ setInterval(() => { if (document.visibilityState === "visible" && !timer?.runnin
 
 async function boot() {
   if ("serviceWorker" in navigator) {
+    // Only an update replaces an existing controller; the very first install shouldn't reload.
+    if (navigator.serviceWorker.controller) navigator.serviceWorker.addEventListener("controllerchange", reloadForUpdate, { once: true });
     try {
       swReg = await navigator.serviceWorker.register("sw.js");
       await navigator.serviceWorker.ready;

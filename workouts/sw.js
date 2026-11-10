@@ -1,4 +1,4 @@
-const CACHE = "qp-v9";
+const CACHE = "qp-v10";
 // Relative to this script, so everything stays under /workouts/.
 const SCOPE = self.registration.scope;
 const SHELL = ["./", "index.html", "styles.css", "app.js", "exercises.js", "manifest.webmanifest", "icons/icon.svg"];
@@ -14,10 +14,11 @@ self.addEventListener("activate", (e) => {
 });
 
 // Network first so deploys show up straight away; cache is the offline fallback.
+// "no-cache" revalidates with the server instead of trusting GitHub Pages' 10-minute max-age.
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || !e.request.url.startsWith(SCOPE)) return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request.url, { cache: "no-cache" })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));
